@@ -20,8 +20,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -224,15 +222,22 @@ export default function DashboardPage() {
     });
   }, [entregasFiltradas]);
 
-  const dadosModalidade = useMemo(() => {
-    const total = entregasDoPeriodo.length || 1;
-    const rodo = entregasDoPeriodo.filter((x) => x.entrega.tipo === "rodoviario").length;
-    const fluv = entregasDoPeriodo.filter((x) => x.entrega.tipo === "fluvial").length;
-    return [
-      { nome: "Rodoviário", valor: rodo, percentual: Math.round((rodo / total) * 100), cor: "var(--accent-rodo)" },
-      { nome: "Fluvial", valor: fluv, percentual: Math.round((fluv / total) * 100), cor: "var(--accent-fluvial)" },
-    ];
-  }, [entregasDoPeriodo]);
+  const dadosVeiculos = useMemo(() => {
+    const contagem = new Map<string, { placa: string; total: number; tipo: string }>();
+    entregasFiltradas.forEach((x) => {
+      const placa = x.entrega.placa?.trim();
+      if (!placa) return;
+      if (!contagem.has(placa)) {
+        contagem.set(placa, { placa, total: 0, tipo: x.entrega.tipo });
+      }
+      contagem.get(placa)!.total += 1;
+    });
+    return Array.from(contagem.values())
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 8);
+  }, [entregasFiltradas]);
+
+  const maxVeiculo = Math.max(1, ...dadosVeiculos.map((v) => v.total));
 
   const rotasComContagem = useMemo(() => {
     return ROTAS_DESTAQUE.map((rota) => {
@@ -439,23 +444,30 @@ export default function DashboardPage() {
             </div>
 
             <div className="glass-surface rounded-2xl p-4">
-              <p className="text-sm font-medium mb-3">Modalidade</p>
-              <ResponsiveContainer width="100%" height={140}>
-                <BarChart data={dadosModalidade} layout="vertical" margin={{ left: 0 }}>
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="nome" tick={{ fill: "#e8eef4", fontSize: 12 }} axisLine={false} tickLine={false} width={80} />
-                  <Tooltip content={<TooltipEscuro />} />
-                  <Bar dataKey="valor" radius={[0, 6, 6, 0]}>
-                    {dadosModalidade.map((d, idx) => (
-                      <Cell key={idx} fill={d.cor} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex justify-between text-xs text-[var(--text-muted)] mt-1 px-2">
-                {dadosModalidade.map((d, idx) => (
-                  <span key={idx}>{d.percentual}%</span>
+              <p className="text-sm font-medium mb-3">Veículos</p>
+              <div className="space-y-2">
+                {dadosVeiculos.map((v, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ backgroundColor: v.tipo === "fluvial" ? "var(--accent-fluvial)" : "var(--accent-rodo)" }}
+                    />
+                    <span className="text-xs font-mono-data w-20 truncate">{v.placa}</span>
+                    <div className="flex-1 bg-black/20 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${(v.total / maxVeiculo) * 100}%`,
+                          backgroundColor: v.tipo === "fluvial" ? "var(--accent-fluvial)" : "var(--accent-rodo)",
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs font-mono-data w-6 text-right">{v.total}</span>
+                  </div>
                 ))}
+                {dadosVeiculos.length === 0 && (
+                  <p className="text-xs text-[var(--text-muted)]">Sem placas registradas no período.</p>
+                )}
               </div>
             </div>
           </div>
