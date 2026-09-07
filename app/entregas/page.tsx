@@ -30,10 +30,14 @@ interface Entrega {
 
 type ModalidadeFiltro = "todos" | "rodoviario" | "fluvial";
 
-const STATUS_LABEL: Record
-  string,
-  { label: string; cor: string; bg: string; borda: string }
-> = {
+interface StatusInfo {
+  label: string;
+  cor: string;
+  bg: string;
+  borda: string;
+}
+
+const STATUS_LABEL: { [chave: string]: StatusInfo } = {
   agendado: {
     label: "Agendado",
     cor: "var(--status-agendado)",
@@ -178,39 +182,27 @@ export default function EntregasPage() {
     }
   }
 
-  const TILES: {
-    valor: ModalidadeFiltro;
-    titulo: string;
-    subtitulo: string;
-    total: number;
-    accent: string;
-    Art: typeof RodoviarioArt;
-  }[] = [
-    {
-      valor: "rodoviario",
-      titulo: "Rodoviário",
-      subtitulo: "Entregas por estrada",
-      total: totalRodoviario,
-      accent: "var(--accent-rodo)",
-      Art: RodoviarioArt,
-    },
-    {
-      valor: "fluvial",
-      titulo: "Fluvial",
-      subtitulo: "Entregas pelos rios da Amazônia",
-      total: totalFluvial,
-      accent: "var(--accent-fluvial)",
-      Art: FluvialArt,
-    },
-    {
-      valor: "todos",
-      titulo: "Todos",
-      subtitulo: "Visão geral das duas modalidades",
-      total: entregas.length,
-      accent: "var(--text-muted)",
-      Art: TodosArt,
-    },
-  ];
+  const tileRodoviario = {
+    valor: "rodoviario" as ModalidadeFiltro,
+    titulo: "Rodoviário",
+    subtitulo: "Entregas por estrada",
+    total: totalRodoviario,
+    accent: "var(--accent-rodo)",
+  };
+  const tileFluvial = {
+    valor: "fluvial" as ModalidadeFiltro,
+    titulo: "Fluvial",
+    subtitulo: "Entregas pelos rios da Amazônia",
+    total: totalFluvial,
+    accent: "var(--accent-fluvial)",
+  };
+  const tileTodos = {
+    valor: "todos" as ModalidadeFiltro,
+    titulo: "Todos",
+    subtitulo: "Visão geral das duas modalidades",
+    total: entregas.length,
+    accent: "var(--text-muted)",
+  };
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -221,41 +213,89 @@ export default function EntregasPage() {
         </p>
       </div>
 
-      {/* Seletor de modalidade */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {TILES.map((tile) => {
-          const ativo = modalidade === tile.valor;
-          const Art = tile.Art;
-          return (
-            <button
-              key={tile.valor}
-              onClick={() => setModalidade(tile.valor)}
-              className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
-              style={{
-                borderColor: ativo ? tile.accent : "var(--border-subtle)",
-                boxShadow: ativo ? `0 0 0 1px ${tile.accent}, 0 8px 24px -8px ${tile.accent}55` : "none",
-                opacity: ativo ? 1 : 0.85,
-              }}
-            >
-              <Art active={ativo} />
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-display font-medium text-base">{tile.titulo}</h3>
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full font-mono-data"
-                    style={{ color: tile.accent, backgroundColor: `${tile.accent}22` }}
-                  >
-                    {tile.total}
-                  </span>
-                </div>
-                <p className="text-xs text-[var(--text-muted)] mt-1">{tile.subtitulo}</p>
-              </div>
-            </button>
-          );
-        })}
+        <button
+          onClick={() => setModalidade(tileRodoviario.valor)}
+          className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
+          style={{
+            borderColor: modalidade === "rodoviario" ? tileRodoviario.accent : "var(--border-subtle)",
+            boxShadow:
+              modalidade === "rodoviario"
+                ? `0 0 0 1px ${tileRodoviario.accent}, 0 8px 24px -8px ${tileRodoviario.accent}55`
+                : "none",
+            opacity: modalidade === "rodoviario" ? 1 : 0.85,
+          }}
+        >
+          <RodoviarioArt active={modalidade === "rodoviario"} />
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-medium text-base">{tileRodoviario.titulo}</h3>
+              <span
+                className="text-xs px-2 py-0.5 rounded-full font-mono-data"
+                style={{ color: tileRodoviario.accent, backgroundColor: `${tileRodoviario.accent}22` }}
+              >
+                {tileRodoviario.total}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{tileRodoviario.subtitulo}</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setModalidade(tileFluvial.valor)}
+          className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
+          style={{
+            borderColor: modalidade === "fluvial" ? tileFluvial.accent : "var(--border-subtle)",
+            boxShadow:
+              modalidade === "fluvial"
+                ? `0 0 0 1px ${tileFluvial.accent}, 0 8px 24px -8px ${tileFluvial.accent}55`
+                : "none",
+            opacity: modalidade === "fluvial" ? 1 : 0.85,
+          }}
+        >
+          <FluvialArt active={modalidade === "fluvial"} />
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-medium text-base">{tileFluvial.titulo}</h3>
+              <span
+                className="text-xs px-2 py-0.5 rounded-full font-mono-data"
+                style={{ color: tileFluvial.accent, backgroundColor: `${tileFluvial.accent}22` }}
+              >
+                {tileFluvial.total}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{tileFluvial.subtitulo}</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setModalidade(tileTodos.valor)}
+          className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
+          style={{
+            borderColor: modalidade === "todos" ? tileTodos.accent : "var(--border-subtle)",
+            boxShadow:
+              modalidade === "todos"
+                ? `0 0 0 1px ${tileTodos.accent}, 0 8px 24px -8px ${tileTodos.accent}55`
+                : "none",
+            opacity: modalidade === "todos" ? 1 : 0.85,
+          }}
+        >
+          <TodosArt active={modalidade === "todos"} />
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-medium text-base">{tileTodos.titulo}</h3>
+              <span
+                className="text-xs px-2 py-0.5 rounded-full font-mono-data"
+                style={{ color: tileTodos.accent, backgroundColor: `${tileTodos.accent}22` }}
+              >
+                {tileTodos.total}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{tileTodos.subtitulo}</p>
+          </div>
+        </button>
       </div>
 
-      {/* Indicadores */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="glass-surface rounded-xl p-3">
           <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs">
@@ -289,7 +329,6 @@ export default function EntregasPage() {
         </div>
       )}
 
-      {/* Barra de busca e filtro */}
       <div className="glass-surface rounded-xl p-3 flex flex-col sm:flex-row gap-3">
         <div className="flex items-center gap-2 flex-1 bg-black/20 rounded-lg px-3 py-2">
           <Search size={16} className="text-[var(--text-muted)]" />
@@ -317,7 +356,6 @@ export default function EntregasPage() {
         </div>
       </div>
 
-      {/* Tabela */}
       {carregando ? (
         <p className="text-[var(--text-muted)] text-sm">Carregando...</p>
       ) : (
@@ -337,7 +375,7 @@ export default function EntregasPage() {
             </thead>
             <tbody>
               {entregasFiltradas.map((e) => {
-                const st = STATUS_LABEL[e.status] ?? STATUS_LABEL.agendado;
+                const st = STATUS_LABEL[e.status] || STATUS_LABEL.agendado;
                 return (
                   <tr key={e.id} className="border-t border-[var(--border-subtle)] hover:bg-white/[0.02]">
                     <td className="p-3 capitalize">
@@ -400,7 +438,6 @@ export default function EntregasPage() {
         </div>
       )}
 
-      {/* Modal de ocorrência */}
       {modalEntrega && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="glass-surface rounded-2xl p-6 max-w-md w-full space-y-4" style={{ backgroundColor: "#101b29" }}>
