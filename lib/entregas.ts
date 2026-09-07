@@ -91,9 +91,10 @@ export async function resumoIndicadores() {
 
   const total = entregas.length;
   const entregues = entregas.filter((e) => e.status === "entregue").length;
-  const atrasados = entregas.filter((e) => e.status === "atrasado").length;
+  const ocorrencias = entregas.filter((e) => e.status === "ocorrencia").length;
+  const naoEntregues = entregas.filter((e) => e.status === "nao_entregue").length;
   const fluvial = entregas.filter((e) => e.tipo === "fluvial").length;
   const rodoviario = entregas.filter((e) => e.tipo === "rodoviario").length;
 
-  return { total, entregues, atrasados, fluvial, rodoviario };
+  return { total, entregues, ocorrencias, naoEntregues, fluvial, rodoviario };
 }
