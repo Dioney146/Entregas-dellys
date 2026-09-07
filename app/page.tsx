@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Package,
   CheckCircle2,
@@ -320,13 +321,32 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <CardKpi label="Total de cargas" valor={kpis.total} cor="var(--text-muted)" Icone={Package} />
-        <CardKpi label="Entregues" valor={kpis.entregues} cor="var(--status-entregue)" Icone={CheckCircle2} />
-        <CardKpi label="Ocorrências" valor={kpis.ocorrencias} cor="var(--status-ocorrencia)" Icone={AlertTriangle} />
-        <CardKpi label="Não entregues" valor={kpis.naoEntregues} cor="var(--status-nao-entregue)" Icone={XCircle} />
-        <CardKpi label="Fluvial" valor={kpis.fluvial} cor="var(--accent-fluvial)" Icone={Ship} />
-        <CardKpi label="Rodoviário" valor={kpis.rodoviario} cor="var(--accent-rodo)" Icone={Truck} />
+      <div className="relative rounded-2xl overflow-hidden min-h-[260px] flex items-end">
+        <Image
+          src="/dashboard-hero.jpg"
+          alt="Vista aérea de Manaus"
+          fill
+          sizes="100vw"
+          className="object-cover"
+          priority
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(10,18,28,0.25) 0%, rgba(10,18,28,0.65) 55%, rgba(10,18,28,0.95) 100%)",
+          }}
+        />
+        <div className="relative w-full p-4 sm:p-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <CardKpi label="Total de cargas" valor={kpis.total} cor="var(--text-muted)" Icone={Package} />
+            <CardKpi label="Entregues" valor={kpis.entregues} cor="var(--status-entregue)" Icone={CheckCircle2} />
+            <CardKpi label="Ocorrências" valor={kpis.ocorrencias} cor="var(--status-ocorrencia)" Icone={AlertTriangle} />
+            <CardKpi label="Não entregues" valor={kpis.naoEntregues} cor="var(--status-nao-entregue)" Icone={XCircle} />
+            <CardKpi label="Fluvial" valor={kpis.fluvial} cor="var(--accent-fluvial)" Icone={Ship} />
+            <CardKpi label="Rodoviário" valor={kpis.rodoviario} cor="var(--accent-rodo)" Icone={Truck} />
+          </div>
+        </div>
       </div>
 
       {!carregando && (
