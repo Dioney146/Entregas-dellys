@@ -73,7 +73,6 @@ function resolverMunicipio(nomeBruto: string): string {
 
 interface CelulaInfo {
   municipio: string;
-  praca: string;
   dia: number;
   entregas: Entrega[];
 }
@@ -144,19 +143,17 @@ export default function CronogramaPage() {
   const maxMensal = Math.max(1, ...contagemPorMes.map((c) => c.rodo + c.fluvial));
 
   const linhas = useMemo(() => {
-    const mapa = new Map<string, { municipio: string; praca: string; dias: Map<number, Entrega[]> }>();
+    const mapa = new Map<string, { municipio: string; dias: Map<number, Entrega[]> }>();
 
     entregasDoMes.forEach((x) => {
       const bruto = x.entrega.municent || x.entrega.destino || "Não informado";
       const municipio = x.entrega.tipo === "rodoviario" ? resolverMunicipio(bruto) : bruto.trim();
-      const praca = x.entrega.praca || "-";
-      const chave = `${municipio}||${praca}`;
       const dia = x.data.getDate();
 
-      if (!mapa.has(chave)) {
-        mapa.set(chave, { municipio, praca, dias: new Map() });
+      if (!mapa.has(municipio)) {
+        mapa.set(municipio, { municipio, dias: new Map() });
       }
-      const linha = mapa.get(chave)!;
+      const linha = mapa.get(municipio)!;
       if (!linha.dias.has(dia)) linha.dias.set(dia, []);
       linha.dias.get(dia)!.push(x.entrega);
     });
@@ -331,20 +328,14 @@ export default function CronogramaPage() {
         <p className="text-[var(--text-muted)] text-sm">Carregando...</p>
       ) : (
         <div className="glass-surface rounded-2xl overflow-auto max-h-[70vh]">
-          <table className="border-collapse text-sm">
+          <table className="border-collapse text-sm w-full">
             <thead>
               <tr>
                 <th
-                  className="sticky top-0 left-0 z-20 bg-[#101b29] p-3 text-left font-medium text-[var(--text-muted)] border-b border-r border-[var(--border-subtle)]"
-                  style={{ minWidth: "160px" }}
+                  className="sticky top-0 left-0 z-20 bg-[#101b29] p-2 text-left font-medium text-[var(--text-muted)] border-b border-r border-[var(--border-subtle)]"
+                  style={{ minWidth: "130px" }}
                 >
                   Município
-                </th>
-                <th
-                  className="sticky top-0 z-20 bg-[#101b29] p-3 text-left font-medium text-[var(--text-muted)] border-b border-r border-[var(--border-subtle)]"
-                  style={{ minWidth: "120px", left: "160px" }}
-                >
-                  Praça / Eixo
                 </th>
                 {Array.from({ length: diasNoMes }, (_, i) => i + 1).map((dia) => {
                   const diaSemana = new Date(ano, mes - 1, dia).getDay();
@@ -352,15 +343,15 @@ export default function CronogramaPage() {
                   return (
                     <th
                       key={dia}
-                      className="sticky top-0 z-10 p-2 text-center font-medium border-b border-[var(--border-subtle)]"
+                      className="sticky top-0 z-10 p-1 text-center font-medium border-b border-[var(--border-subtle)]"
                       style={{
-                        minWidth: "64px",
+                        minWidth: "38px",
                         backgroundColor: fimDeSemana ? "rgba(126,146,166,0.10)" : "#101b29",
                         color: fimDeSemana ? "var(--text-muted)" : "var(--text-primary)",
                       }}
                     >
-                      <div className="text-sm font-semibold font-mono-data">{dia}</div>
-                      <div className="text-[9px] text-[var(--text-muted)]">{DIAS_SEMANA[diaSemana]}</div>
+                      <div className="text-xs font-semibold font-mono-data">{dia}</div>
+                      <div className="text-[8px] text-[var(--text-muted)]">{DIAS_SEMANA[diaSemana]}</div>
                     </th>
                   );
                 })}
@@ -370,16 +361,10 @@ export default function CronogramaPage() {
               {linhas.map((linha, idxLinha) => (
                 <tr key={idxLinha} className="hover:bg-white/[0.02]">
                   <td
-                    className="sticky left-0 z-10 bg-[#101b29] p-3 border-r border-b border-[var(--border-subtle)] font-medium"
-                    style={{ minWidth: "160px" }}
+                    className="sticky left-0 z-10 bg-[#101b29] p-2 border-r border-b border-[var(--border-subtle)] font-medium text-sm"
+                    style={{ minWidth: "130px" }}
                   >
                     {linha.municipio}
-                  </td>
-                  <td
-                    className="sticky z-10 bg-[#101b29] p-3 border-r border-b border-[var(--border-subtle)] text-[var(--text-muted)]"
-                    style={{ minWidth: "120px", left: "160px" }}
-                  >
-                    {linha.praca}
                   </td>
                   {Array.from({ length: diasNoMes }, (_, i) => i + 1).map((dia) => {
                     const lista = linha.dias.get(dia) ?? [];
@@ -392,7 +377,7 @@ export default function CronogramaPage() {
                     return (
                       <td
                         key={dia}
-                        className="p-1 text-center border-b border-[var(--border-subtle)] cursor-pointer align-middle"
+                        className="p-0.5 text-center border-b border-[var(--border-subtle)] cursor-pointer align-middle"
                         style={{
                           backgroundColor:
                             lista.length > 0
@@ -410,30 +395,29 @@ export default function CronogramaPage() {
                           if (lista.length === 0) return;
                           setCelulaSelecionada({
                             municipio: linha.municipio,
-                            praca: linha.praca,
                             dia,
                             entregas: lista,
                           });
                         }}
                       >
                         {lista.length > 0 && (
-                          <div className="flex flex-col items-center justify-center gap-0.5 px-1">
-                            <div className="flex items-center gap-1">
+                          <div className="flex flex-col items-center justify-center gap-0.5">
+                            <div className="flex items-center gap-0.5">
                               {temRodo && (
                                 <span
-                                  className="w-1.5 h-1.5 rounded-full"
+                                  className="w-1 h-1 rounded-full"
                                   style={{ backgroundColor: "var(--accent-rodo)" }}
                                 />
                               )}
                               {temFluvial && (
                                 <span
-                                  className="w-1.5 h-1.5 rounded-full"
+                                  className="w-1 h-1 rounded-full"
                                   style={{ backgroundColor: "var(--accent-fluvial)" }}
                                 />
                               )}
                             </div>
-                            <span className="text-[10px] font-mono-data leading-tight break-all">
-                              {placas.length > 0 ? placas.join(", ") : lista.length}
+                            <span className="text-[9px] font-mono-data leading-tight break-all">
+                              {placas.length > 0 ? placas.join(" ") : lista.length}
                             </span>
                           </div>
                         )}
@@ -445,7 +429,7 @@ export default function CronogramaPage() {
               {linhas.length === 0 && (
                 <tr>
                   <td
-                    colSpan={diasNoMes + 2}
+                    colSpan={diasNoMes + 1}
                     className="p-8 text-center text-[var(--text-muted)]"
                   >
                     Nenhuma entrega encontrada para {MESES[mes - 1]} de {ano}.
@@ -471,7 +455,6 @@ export default function CronogramaPage() {
                 <X size={18} />
               </button>
             </div>
-            <p className="text-xs text-[var(--text-muted)]">Praça/Eixo: {celulaSelecionada.praca}</p>
 
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {celulaSelecionada.entregas.map((e) => (
