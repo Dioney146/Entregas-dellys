@@ -16,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <h1 className="text-lg font-semibold">Controle de Entregas — Delly&apos;s</h1>
             <nav className="flex gap-4 text-sm">
               <Link href="/" className="hover:text-sky-400">Dashboard</Link>
+              <Link href="/entregas" className="hover:text-sky-400">Entregas</Link>
               <Link href="/cronograma" className="hover:text-sky-400">Cronograma</Link>
             </nav>
           </header>
