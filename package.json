@@ -14,7 +14,8 @@
     "xlsx": "^0.18.5",
     "google-spreadsheet": "^4.1.4",
     "google-auth-library": "^9.14.1",
-    "lucide-react": "^0.453.0"
+    "lucide-react": "^0.453.0",
+    "recharts": "^2.12.7"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
