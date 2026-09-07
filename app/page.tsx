@@ -11,8 +11,22 @@ function Card({ label, value, color }: { label: string; value: number | string; 
   );
 }
 
+const STATUS_LABEL: Record<string, { label: string; cor: string }> = {
+  agendado: { label: "Agendado", cor: "bg-slate-600" },
+  entregue: { label: "Entregue", cor: "bg-emerald-600" },
+  ocorrencia: { label: "Ocorrência", cor: "bg-amber-600" },
+  nao_entregue: { label: "Não entregue", cor: "bg-red-600" },
+};
+
 export default async function DashboardPage() {
-  let indicadores = { total: 0, entregues: 0, atrasados: 0, fluvial: 0, rodoviario: 0 };
+  let indicadores = {
+    total: 0,
+    entregues: 0,
+    ocorrencias: 0,
+    naoEntregues: 0,
+    fluvial: 0,
+    rodoviario: 0,
+  };
   let entregas: Awaited<ReturnType<typeof listarEntregas>> = [];
   let erro: string | null = null;
 
@@ -34,7 +48,8 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap gap-4">
         <Card label="Total de cargas" value={indicadores.total} />
         <Card label="Entregues" value={indicadores.entregues} color="text-emerald-400" />
-        <Card label="Atrasados" value={indicadores.atrasados} color="text-red-400" />
+        <Card label="Ocorrências" value={indicadores.ocorrencias} color="text-amber-400" />
+        <Card label="Não entregues" value={indicadores.naoEntregues} color="text-red-400" />
         <Card label="Fluvial" value={indicadores.fluvial} color="text-sky-400" />
         <Card label="Rodoviário" value={indicadores.rodoviario} color="text-amber-400" />
       </div>
@@ -62,8 +77,12 @@ export default async function DashboardPage() {
                 <td className="p-3">{e.destino ?? e.municent ?? "-"}</td>
                 <td className="p-3">{e.data_prevista ?? "-"}</td>
                 <td className="p-3">
-                  <span className="px-2 py-1 rounded-full text-xs bg-slate-700">
-                    {e.status}
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs text-white ${
+                      STATUS_LABEL[e.status]?.cor ?? "bg-slate-600"
+                    }`}
+                  >
+                    {STATUS_LABEL[e.status]?.label ?? e.status}
                   </span>
                 </td>
               </tr>
@@ -71,7 +90,7 @@ export default async function DashboardPage() {
             {entregas.length === 0 && !erro && (
               <tr>
                 <td colSpan={7} className="p-6 text-center text-slate-500">
-                  Nenhuma entrega cadastrada ainda. Use a página de Importar para começar.
+                  Nenhuma entrega cadastrada ainda.
                 </td>
               </tr>
             )}
