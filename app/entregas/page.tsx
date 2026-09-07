@@ -190,3 +190,263 @@ export default function EntregasPage() {
   };
   const tileFluvial = {
     valor: "fluvial" as ModalidadeFiltro,
+    titulo: "Fluvial",
+    subtitulo: "Entregas pelos rios da Amazônia",
+    total: totalFluvial,
+    accent: "var(--accent-fluvial)",
+  };
+
+  return (
+    <div className="space-y-6 w-full">
+      <div>
+        <h2 className="text-2xl font-semibold font-display tracking-tight">Entregas</h2>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
+          Acompanhe e atualize o status de cada carga, separado por modal.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <button
+          onClick={() => setModalidade(tileRodoviario.valor)}
+          className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
+          style={{
+            borderColor: modalidade === "rodoviario" ? tileRodoviario.accent : "var(--border-subtle)",
+            boxShadow:
+              modalidade === "rodoviario"
+                ? `0 0 0 1px ${tileRodoviario.accent}, 0 8px 24px -8px ${tileRodoviario.accent}55`
+                : "none",
+            opacity: modalidade === "rodoviario" ? 1 : 0.85,
+          }}
+        >
+          <RodoviarioArt active={modalidade === "rodoviario"} />
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-medium text-base">{tileRodoviario.titulo}</h3>
+              <span
+                className="text-xs px-2 py-0.5 rounded-full font-mono-data"
+                style={{ color: tileRodoviario.accent, backgroundColor: `${tileRodoviario.accent}22` }}
+              >
+                {tileRodoviario.total}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{tileRodoviario.subtitulo}</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setModalidade(tileFluvial.valor)}
+          className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
+          style={{
+            borderColor: modalidade === "fluvial" ? tileFluvial.accent : "var(--border-subtle)",
+            boxShadow:
+              modalidade === "fluvial"
+                ? `0 0 0 1px ${tileFluvial.accent}, 0 8px 24px -8px ${tileFluvial.accent}55`
+                : "none",
+            opacity: modalidade === "fluvial" ? 1 : 0.85,
+          }}
+        >
+          <FluvialArt active={modalidade === "fluvial"} />
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-medium text-base">{tileFluvial.titulo}</h3>
+              <span
+                className="text-xs px-2 py-0.5 rounded-full font-mono-data"
+                style={{ color: tileFluvial.accent, backgroundColor: `${tileFluvial.accent}22` }}
+              >
+                {tileFluvial.total}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{tileFluvial.subtitulo}</p>
+          </div>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="glass-surface rounded-xl p-3">
+          <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs">
+            <Package size={14} /> Total
+          </div>
+          <p className="text-xl font-semibold font-mono-data mt-1">{indicadores.total}</p>
+        </div>
+        <div className="glass-surface rounded-xl p-3">
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--status-entregue)" }}>
+            <CheckCircle2 size={14} /> Entregues
+          </div>
+          <p className="text-xl font-semibold font-mono-data mt-1">{indicadores.entregues}</p>
+        </div>
+        <div className="glass-surface rounded-xl p-3">
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--status-agendado)" }}>
+            <Clock size={14} /> Pendentes
+          </div>
+          <p className="text-xl font-semibold font-mono-data mt-1">{indicadores.pendentes}</p>
+        </div>
+        <div className="glass-surface rounded-xl p-3">
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--status-ocorrencia)" }}>
+            <TriangleAlert size={14} /> Ocorrências
+          </div>
+          <p className="text-xl font-semibold font-mono-data mt-1">{indicadores.ocorrencias}</p>
+        </div>
+      </div>
+
+      {erro && (
+        <div className="bg-red-900/40 border border-red-700 text-red-200 text-sm rounded-lg p-3">
+          {erro}
+        </div>
+      )}
+
+      <div className="glass-surface rounded-xl p-3 flex flex-col sm:flex-row gap-3">
+        <div className="flex items-center gap-2 flex-1 bg-black/20 rounded-lg px-3 py-2">
+          <Search size={16} className="text-[var(--text-muted)]" />
+          <input
+            type="text"
+            placeholder="Buscar por cliente, nota, carregamento, placa..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="bg-transparent outline-none text-sm w-full placeholder:text-[var(--text-muted)]"
+          />
+        </div>
+        <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-2">
+          <Filter size={16} className="text-[var(--text-muted)]" />
+          <select
+            className="bg-transparent outline-none text-sm"
+            value={filtroStatus}
+            onChange={(e) => setFiltroStatus(e.target.value)}
+          >
+            <option value="" className="bg-slate-900">Todos os status</option>
+            <option value="agendado" className="bg-slate-900">Agendado</option>
+            <option value="entregue" className="bg-slate-900">Entregue</option>
+            <option value="ocorrencia" className="bg-slate-900">Ocorrência</option>
+            <option value="nao_entregue" className="bg-slate-900">Não entregue</option>
+          </select>
+        </div>
+      </div>
+
+      {carregando ? (
+        <p className="text-[var(--text-muted)] text-sm">Carregando...</p>
+      ) : (
+        <div className="glass-surface rounded-2xl overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-black/20 text-left text-[var(--text-muted)]">
+              <tr>
+                <th className="p-3 font-medium">Tipo</th>
+                <th className="p-3 font-medium">Carregamento</th>
+                <th className="p-3 font-medium">Nota</th>
+                <th className="p-3 font-medium">Cliente</th>
+                <th className="p-3 font-medium">Destino</th>
+                <th className="p-3 font-medium">Previsão</th>
+                <th className="p-3 font-medium">Status</th>
+                <th className="p-3 font-medium">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entregasFiltradas.map((e) => {
+                const st = STATUS_LABEL[e.status] || STATUS_LABEL.agendado;
+                return (
+                  <tr key={e.id} className="border-t border-[var(--border-subtle)] hover:bg-white/[0.02]">
+                    <td className="p-3 capitalize">
+                      {e.tipo}
+                      {e.modal ? ` (${e.modal})` : ""}
+                    </td>
+                    <td className="p-3 font-mono-data text-[var(--text-primary)]">{e.numcar ?? "-"}</td>
+                    <td className="p-3 font-mono-data text-[var(--text-primary)]">{e.numnota ?? "-"}</td>
+                    <td className="p-3">{e.cliente ?? "-"}</td>
+                    <td className="p-3">{e.destino ?? e.municent ?? "-"}</td>
+                    <td className="p-3">{e.data_prevista ?? "-"}</td>
+                    <td className="p-3">
+                      <span
+                        className="text-xs rounded-full px-2 py-1 border"
+                        style={{ color: st.cor, backgroundColor: st.bg, borderColor: st.borda }}
+                      >
+                        {st.label}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex gap-1.5">
+                        <button
+                          disabled={salvandoId === e.id}
+                          onClick={() => marcarStatus(e.id, "entregue")}
+                          title="Marcar como entregue"
+                          className="flex items-center gap-1 border border-[var(--status-entregue)]/40 text-[var(--status-entregue)] hover:bg-[var(--status-entregue)]/10 disabled:opacity-40 text-xs rounded-lg px-2 py-1 transition-colors"
+                        >
+                          <CheckCircle2 size={13} /> Entregue
+                        </button>
+                        <button
+                          disabled={salvandoId === e.id}
+                          onClick={() => abrirModalOcorrencia(e)}
+                          title="Registrar ocorrência"
+                          className="flex items-center gap-1 border border-[var(--status-ocorrencia)]/40 text-[var(--status-ocorrencia)] hover:bg-[var(--status-ocorrencia)]/10 disabled:opacity-40 text-xs rounded-lg px-2 py-1 transition-colors"
+                        >
+                          <AlertTriangle size={13} /> Ocorrência
+                        </button>
+                        <button
+                          disabled={salvandoId === e.id}
+                          onClick={() => marcarStatus(e.id, "nao_entregue")}
+                          title="Marcar como não entregue"
+                          className="flex items-center gap-1 border border-[var(--status-nao-entregue)]/40 text-[var(--status-nao-entregue)] hover:bg-[var(--status-nao-entregue)]/10 disabled:opacity-40 text-xs rounded-lg px-2 py-1 transition-colors"
+                        >
+                          <XCircle size={13} /> Não entregue
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {entregasFiltradas.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-[var(--text-muted)]">
+                    Nenhuma entrega encontrada para esse filtro.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {modalEntrega && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="glass-surface rounded-2xl p-6 max-w-md w-full space-y-4" style={{ backgroundColor: "#101b29" }}>
+            <h3 className="text-lg font-semibold font-display">Registrar ocorrência</h3>
+
+            <div className="text-sm text-[var(--text-muted)] space-y-1">
+              <p><span className="text-[var(--text-primary)]">Carregamento:</span> {modalEntrega.numcar ?? "-"}</p>
+              <p><span className="text-[var(--text-primary)]">Nota fiscal:</span> {modalEntrega.numnota ?? "-"}</p>
+              <p><span className="text-[var(--text-primary)]">Cliente:</span> {modalEntrega.cliente ?? "-"}</p>
+              <p><span className="text-[var(--text-primary)]">Código cliente:</span> {modalEntrega.codcli ?? "-"}</p>
+              <p><span className="text-[var(--text-primary)]">Placa:</span> {modalEntrega.placa ?? "-"}</p>
+              <p><span className="text-[var(--text-primary)]">Destino:</span> {modalEntrega.destino ?? modalEntrega.municent ?? "-"}</p>
+            </div>
+
+            <label className="block text-sm">
+              Observação da ocorrência
+              <textarea
+                className="mt-1 w-full bg-black/20 border border-[var(--border-subtle)] rounded-lg p-2 text-sm outline-none focus:border-[var(--status-ocorrencia)]"
+                rows={4}
+                value={obs}
+                onChange={(e) => setObs(e.target.value)}
+                placeholder="Descreva o que aconteceu..."
+              />
+            </label>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setModalEntrega(null)}
+                className="px-4 py-2 text-sm rounded-lg border border-[var(--border-subtle)] hover:bg-white/5"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={enviarOcorrencia}
+                disabled={enviandoOcorrencia}
+                className="px-4 py-2 text-sm rounded-lg text-black font-medium disabled:opacity-50"
+                style={{ backgroundColor: "var(--status-ocorrencia)" }}
+              >
+                {enviandoOcorrencia ? "Salvando..." : "Salvar ocorrência"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
