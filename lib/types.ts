@@ -1,10 +1,5 @@
 export type TipoEntrega = "fluvial" | "rodoviario";
-export type StatusEntrega =
-  | "agendado"
-  | "em_transito"
-  | "entregue"
-  | "atrasado"
-  | "cancelado";
+export type StatusEntrega = "agendado" | "entregue" | "ocorrencia" | "nao_entregue";
 
 export interface Entrega {
   id: string;
@@ -26,5 +21,18 @@ export interface Entrega {
   data_realizada: string | null;
   status: StatusEntrega;
   observacao: string | null;
+  created_at: string;
+}
+
+export interface Ocorrencia {
+  id: string;
+  entrega_id: string;
+  carregamento: string | null;
+  numnota: string | null;
+  cliente: string | null;
+  codcli: string | null;
+  placa: string | null;
+  destino: string | null;
+  obs: string | null;
   created_at: string;
 }
