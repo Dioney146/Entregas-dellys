@@ -179,6 +179,11 @@ export default function CronogramaPage() {
     return linhas.join("\n");
   }
 
+  function placasDaCelula(lista: Entrega[]) {
+    const unicas = Array.from(new Set(lista.map((e) => e.placa).filter((p): p is string => !!p && p.trim() !== "")));
+    return unicas;
+  }
+
   return (
     <div className="space-y-6 max-w-[1500px] mx-auto">
       <div>
@@ -349,7 +354,7 @@ export default function CronogramaPage() {
                       key={dia}
                       className="sticky top-0 z-10 p-2 text-center font-medium border-b border-[var(--border-subtle)]"
                       style={{
-                        minWidth: "44px",
+                        minWidth: "64px",
                         backgroundColor: fimDeSemana ? "rgba(126,146,166,0.10)" : "#101b29",
                         color: fimDeSemana ? "var(--text-muted)" : "var(--text-primary)",
                       }}
@@ -382,6 +387,7 @@ export default function CronogramaPage() {
                     const temFluvial = lista.some((e) => e.tipo === "fluvial");
                     const diaSemana = new Date(ano, mes - 1, dia).getDay();
                     const fimDeSemana = diaSemana === 0 || diaSemana === 6;
+                    const placas = placasDaCelula(lista);
 
                     return (
                       <td
@@ -411,20 +417,24 @@ export default function CronogramaPage() {
                         }}
                       >
                         {lista.length > 0 && (
-                          <div className="flex items-center justify-center gap-1">
-                            {temRodo && (
-                              <span
-                                className="w-1.5 h-1.5 rounded-full"
-                                style={{ backgroundColor: "var(--accent-rodo)" }}
-                              />
-                            )}
-                            {temFluvial && (
-                              <span
-                                className="w-1.5 h-1.5 rounded-full"
-                                style={{ backgroundColor: "var(--accent-fluvial)" }}
-                              />
-                            )}
-                            <span className="text-[11px] font-mono-data">{lista.length}</span>
+                          <div className="flex flex-col items-center justify-center gap-0.5 px-1">
+                            <div className="flex items-center gap-1">
+                              {temRodo && (
+                                <span
+                                  className="w-1.5 h-1.5 rounded-full"
+                                  style={{ backgroundColor: "var(--accent-rodo)" }}
+                                />
+                              )}
+                              {temFluvial && (
+                                <span
+                                  className="w-1.5 h-1.5 rounded-full"
+                                  style={{ backgroundColor: "var(--accent-fluvial)" }}
+                                />
+                              )}
+                            </div>
+                            <span className="text-[10px] font-mono-data leading-tight break-all">
+                              {placas.length > 0 ? placas.join(", ") : lista.length}
+                            </span>
                           </div>
                         )}
                       </td>
@@ -479,6 +489,7 @@ export default function CronogramaPage() {
                     </span>
                   </div>
                   <p className="text-[var(--text-muted)]">Nota: {e.numnota ?? "-"} · Carregamento: {e.numcar ?? "-"}</p>
+                  <p className="text-[var(--text-muted)]">Placa: {e.placa ?? "-"}</p>
                   <p className="text-[var(--text-muted)]">Destino: {e.destino ?? "-"}</p>
                   <p className="text-[var(--text-muted)]">Status: {e.status}</p>
                 </div>
