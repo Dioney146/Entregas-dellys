@@ -2,27 +2,27 @@
 
 import { useEffect, useState } from "react";
 
-type StatusEntrega = "agendado" | "em_transito" | "entregue" | "atrasado" | "cancelado";
-
 interface Entrega {
   id: string;
   tipo: string;
   modal: string | null;
   numcar: string | null;
+  numnota: string | null;
+  codcli: string | null;
   cliente: string | null;
   destino: string | null;
   municent: string | null;
+  placa: string | null;
   data_prevista: string | null;
-  status: StatusEntrega;
+  status: "agendado" | "entregue" | "ocorrencia" | "nao_entregue";
 }
 
-const STATUS_OPCOES: { valor: StatusEntrega; label: string; cor: string }[] = [
-  { valor: "agendado", label: "Agendado", cor: "bg-slate-600" },
-  { valor: "em_transito", label: "Em trânsito", cor: "bg-blue-600" },
-  { valor: "entregue", label: "Entregue", cor: "bg-emerald-600" },
-  { valor: "atrasado", label: "Atrasado", cor: "bg-red-600" },
-  { valor: "cancelado", label: "Cancelado", cor: "bg-slate-500" },
-];
+const STATUS_LABEL: Record<string, { label: string; cor: string }> = {
+  agendado: { label: "Agendado", cor: "bg-slate-600" },
+  entregue: { label: "Entregue", cor: "bg-emerald-600" },
+  ocorrencia: { label: "Ocorrência", cor: "bg-amber-600" },
+  nao_entregue: { label: "Não entregue", cor: "bg-red-600" },
+};
 
 export default function EntregasPage() {
   const [entregas, setEntregas] = useState<Entrega[]>([]);
@@ -30,6 +30,10 @@ export default function EntregasPage() {
   const [salvandoId, setSalvandoId] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [filtroStatus, setFiltroStatus] = useState<string>("");
+
+  const [modalEntrega, setModalEntrega] = useState<Entrega | null>(null);
+  const [obs, setObs] = useState("");
+  const [enviandoOcorrencia, setEnviandoOcorrencia] = useState(false);
 
   async function carregar() {
     setCarregando(true);
@@ -52,30 +56,61 @@ export default function EntregasPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtroStatus]);
 
-  async function mudarStatus(id: string, novoStatus: StatusEntrega) {
+  async function marcarStatus(id: string, status: "entregue" | "nao_entregue") {
     setSalvandoId(id);
     try {
-      const dataRealizada =
-        novoStatus === "entregue" ? new Date().toISOString().split("T")[0] : undefined;
-
+      const dataRealizada = new Date().toISOString().split("T")[0];
       const resp = await fetch("/api/entregas", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: novoStatus, data_realizada: dataRealizada }),
+        body: JSON.stringify({ id, status, data_realizada: dataRealizada }),
       });
-
       if (!resp.ok) {
         const json = await resp.json();
         throw new Error(json.error ?? "Erro ao atualizar status");
       }
-
-      setEntregas((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, status: novoStatus } : e))
-      );
+      setEntregas((prev) => prev.map((e) => (e.id === id ? { ...e, status } : e)));
     } catch (e: any) {
       alert(e.message ?? "Erro ao atualizar status");
     } finally {
       setSalvandoId(null);
+    }
+  }
+
+  function abrirModalOcorrencia(entrega: Entrega) {
+    setModalEntrega(entrega);
+    setObs("");
+  }
+
+  async function enviarOcorrencia() {
+    if (!modalEntrega) return;
+    setEnviandoOcorrencia(true);
+    try {
+      const resp = await fetch("/api/ocorrencias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          entrega_id: modalEntrega.id,
+          carregamento: modalEntrega.numcar,
+          numnota: modalEntrega.numnota,
+          cliente: modalEntrega.cliente,
+          codcli: modalEntrega.codcli,
+          placa: modalEntrega.placa,
+          destino: modalEntrega.destino ?? modalEntrega.municent,
+          obs,
+        }),
+      });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.error ?? "Erro ao registrar ocorrência");
+
+      setEntregas((prev) =>
+        prev.map((e) => (e.id === modalEntrega.id ? { ...e, status: "ocorrencia" } : e))
+      );
+      setModalEntrega(null);
+    } catch (e: any) {
+      alert(e.message ?? "Erro ao registrar ocorrência");
+    } finally {
+      setEnviandoOcorrencia(false);
     }
   }
 
@@ -89,9 +124,10 @@ export default function EntregasPage() {
           onChange={(e) => setFiltroStatus(e.target.value)}
         >
           <option value="">Todos os status</option>
-          {STATUS_OPCOES.map((s) => (
-            <option key={s.valor} value={s.valor}>{s.label}</option>
-          ))}
+          <option value="agendado">Agendado</option>
+          <option value="entregue">Entregue</option>
+          <option value="ocorrencia">Ocorrência</option>
+          <option value="nao_entregue">Não entregue</option>
         </select>
       </div>
 
@@ -104,7 +140,7 @@ export default function EntregasPage() {
       {carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>
       ) : (
-        <div className="bg-slate-800 rounded-xl overflow-hidden">
+        <div className="bg-slate-800 rounded-xl overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-700 text-left">
               <tr>
@@ -114,6 +150,7 @@ export default function EntregasPage() {
                 <th className="p-3">Destino</th>
                 <th className="p-3">Previsão</th>
                 <th className="p-3">Status</th>
+                <th className="p-3">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -125,32 +162,90 @@ export default function EntregasPage() {
                   <td className="p-3">{e.destino ?? e.municent ?? "-"}</td>
                   <td className="p-3">{e.data_prevista ?? "-"}</td>
                   <td className="p-3">
-                    <select
-                      className={`text-xs rounded-full px-2 py-1 border-none text-white ${
-                        STATUS_OPCOES.find((s) => s.valor === e.status)?.cor ?? "bg-slate-600"
-                      }`}
-                      value={e.status}
-                      disabled={salvandoId === e.id}
-                      onChange={(ev) => mudarStatus(e.id, ev.target.value as StatusEntrega)}
-                    >
-                      {STATUS_OPCOES.map((s) => (
-                        <option key={s.valor} value={s.valor} className="text-black">
-                          {s.label}
-                        </option>
-                      ))}
-                    </select>
+                    <span className={`text-xs rounded-full px-2 py-1 text-white ${STATUS_LABEL[e.status]?.cor ?? "bg-slate-600"}`}>
+                      {STATUS_LABEL[e.status]?.label ?? e.status}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <div className="flex gap-1">
+                      <button
+                        disabled={salvandoId === e.id}
+                        onClick={() => marcarStatus(e.id, "entregue")}
+                        className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs rounded-lg px-2 py-1"
+                      >
+                        Entregue
+                      </button>
+                      <button
+                        disabled={salvandoId === e.id}
+                        onClick={() => abrirModalOcorrencia(e)}
+                        className="bg-amber-700 hover:bg-amber-600 disabled:opacity-50 text-white text-xs rounded-lg px-2 py-1"
+                      >
+                        Ocorrência
+                      </button>
+                      <button
+                        disabled={salvandoId === e.id}
+                        onClick={() => marcarStatus(e.id, "nao_entregue")}
+                        className="bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white text-xs rounded-lg px-2 py-1"
+                      >
+                        Não entregue
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {entregas.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-6 text-center text-slate-500">
+                  <td colSpan={7} className="p-6 text-center text-slate-500">
                     Nenhuma entrega encontrada.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {modalEntrega && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full space-y-4">
+            <h3 className="text-lg font-semibold">Registrar ocorrência</h3>
+
+            <div className="text-sm text-slate-300 space-y-1">
+              <p><span className="text-slate-500">Carregamento:</span> {modalEntrega.numcar ?? "-"}</p>
+              <p><span className="text-slate-500">Nota fiscal:</span> {modalEntrega.numnota ?? "-"}</p>
+              <p><span className="text-slate-500">Cliente:</span> {modalEntrega.cliente ?? "-"}</p>
+              <p><span className="text-slate-500">Código cliente:</span> {modalEntrega.codcli ?? "-"}</p>
+              <p><span className="text-slate-500">Placa:</span> {modalEntrega.placa ?? "-"}</p>
+              <p><span className="text-slate-500">Destino:</span> {modalEntrega.destino ?? modalEntrega.municent ?? "-"}</p>
+            </div>
+
+            <label className="block text-sm">
+              Observação da ocorrência
+              <textarea
+                className="mt-1 w-full bg-slate-700 rounded-lg p-2 text-sm"
+                rows={4}
+                value={obs}
+                onChange={(e) => setObs(e.target.value)}
+                placeholder="Descreva o que aconteceu..."
+              />
+            </label>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setModalEntrega(null)}
+                className="px-4 py-2 text-sm rounded-lg bg-slate-700 hover:bg-slate-600"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={enviarOcorrencia}
+                disabled={enviandoOcorrencia}
+                className="px-4 py-2 text-sm rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-50"
+              >
+                {enviandoOcorrencia ? "Salvando..." : "Salvar ocorrência"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
