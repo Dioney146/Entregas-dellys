@@ -48,6 +48,29 @@ function parseData(raw: string | null | undefined): Date | null {
   return null;
 }
 
+function normalizarTexto(txt: string): string {
+  return txt
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+}
+
+const GRUPOS_MUNICIPIOS: { principal: string; aliases: string[] }[] = [
+  { principal: "Manacapuru", aliases: ["MANACAPURU", "IRANDUBA", "NOVO AIRAO"] },
+  { principal: "Presidente Figueiredo", aliases: ["PRESIDENTE FIGUEIREDO"] },
+  { principal: "Autazes", aliases: ["AUTAZES", "CAREIRO DA VARZEA", "CAREIRO", "MANAQUIRI"] },
+  { principal: "Silves", aliases: ["SILVES", "ITAPIRANGA"] },
+  { principal: "Itacoatiara", aliases: ["ITACOATIARA", "RIO PRETO DA EVA", "NOVO REMANSO"] },
+];
+
+function resolverMunicipio(nomeBruto: string): string {
+  const normalizado = normalizarTexto(nomeBruto);
+  const grupo = GRUPOS_MUNICIPIOS.find((g) => g.aliases.includes(normalizado));
+  if (grupo) return grupo.principal;
+  return nomeBruto.trim();
+}
+
 interface CelulaInfo {
   municipio: string;
   praca: string;
@@ -124,7 +147,8 @@ export default function CronogramaPage() {
     const mapa = new Map<string, { municipio: string; praca: string; dias: Map<number, Entrega[]> }>();
 
     entregasDoMes.forEach((x) => {
-      const municipio = x.entrega.municent || x.entrega.destino || "Não informado";
+      const bruto = x.entrega.municent || x.entrega.destino || "Não informado";
+      const municipio = x.entrega.tipo === "rodoviario" ? resolverMunicipio(bruto) : bruto.trim();
       const praca = x.entrega.praca || "-";
       const chave = `${municipio}||${praca}`;
       const dia = x.data.getDate();
