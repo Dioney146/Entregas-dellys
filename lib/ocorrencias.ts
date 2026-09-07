@@ -1,0 +1,23 @@
+import { getSheet } from "./sheets";
+import { Ocorrencia } from "./types";
+
+export async function registrarOcorrencia(dados: Partial<Ocorrencia>) {
+  const sheet = await getSheet("ocorrencias");
+  const agora = new Date().toISOString();
+
+  const linha = {
+    id: crypto.randomUUID(),
+    entrega_id: dados.entrega_id ?? "",
+    carregamento: dados.carregamento ?? "",
+    numnota: dados.numnota ?? "",
+    cliente: dados.cliente ?? "",
+    codcli: dados.codcli ?? "",
+    placa: dados.placa ?? "",
+    destino: dados.destino ?? "",
+    obs: dados.obs ?? "",
+    created_at: agora,
+  };
+
+  await sheet.addRow(linha);
+  return linha;
+}
