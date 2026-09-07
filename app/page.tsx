@@ -223,16 +223,18 @@ export default function DashboardPage() {
   }, [entregasFiltradas]);
 
   const dadosVeiculos = useMemo(() => {
-    const contagem = new Map<string, { placa: string; total: number; tipo: string }>();
+    const mapa = new Map<string, { placa: string; tipo: string; viagens: Set<string> }>();
     entregasFiltradas.forEach((x) => {
       const placa = x.entrega.placa?.trim();
       if (!placa) return;
-      if (!contagem.has(placa)) {
-        contagem.set(placa, { placa, total: 0, tipo: x.entrega.tipo });
+      if (!mapa.has(placa)) {
+        mapa.set(placa, { placa, tipo: x.entrega.tipo, viagens: new Set<string>() });
       }
-      contagem.get(placa)!.total += 1;
+      const chaveViagem = x.entrega.numcar?.trim() || x.entrega.id;
+      mapa.get(placa)!.viagens.add(chaveViagem);
     });
-    return Array.from(contagem.values())
+    return Array.from(mapa.values())
+      .map((v) => ({ placa: v.placa, tipo: v.tipo, total: v.viagens.size }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 8);
   }, [entregasFiltradas]);
@@ -444,7 +446,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="glass-surface rounded-2xl p-4">
-              <p className="text-sm font-medium mb-3">Veículos</p>
+              <p className="text-sm font-medium mb-3">Veículos · viagens no período</p>
               <div className="space-y-2">
                 {dadosVeiculos.map((v, idx) => (
                   <div key={idx} className="flex items-center gap-2">
