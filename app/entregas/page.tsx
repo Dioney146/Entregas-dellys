@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface Entrega {
   id: string;
@@ -30,6 +30,7 @@ export default function EntregasPage() {
   const [salvandoId, setSalvandoId] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [filtroStatus, setFiltroStatus] = useState<string>("");
+  const [busca, setBusca] = useState("");
 
   const [modalEntrega, setModalEntrega] = useState<Entrega | null>(null);
   const [obs, setObs] = useState("");
@@ -55,6 +56,24 @@ export default function EntregasPage() {
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtroStatus]);
+
+  const entregasFiltradas = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    if (!termo) return entregas;
+
+    return entregas.filter((e) => {
+      const campos = [
+        e.cliente,
+        e.numnota,
+        e.numcar,
+        e.placa,
+        e.destino,
+        e.municent,
+        e.codcli,
+      ];
+      return campos.some((campo) => (campo ?? "").toLowerCase().includes(termo));
+    });
+  }, [entregas, busca]);
 
   async function marcarStatus(id: string, status: "entregue" | "nao_entregue") {
     setSalvandoId(id);
@@ -116,19 +135,29 @@ export default function EntregasPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="text-xl font-semibold">Entregas</h2>
-        <select
-          className="bg-slate-800 rounded-lg p-2 text-sm"
-          value={filtroStatus}
-          onChange={(e) => setFiltroStatus(e.target.value)}
-        >
-          <option value="">Todos os status</option>
-          <option value="agendado">Agendado</option>
-          <option value="entregue">Entregue</option>
-          <option value="ocorrencia">Ocorrência</option>
-          <option value="nao_entregue">Não entregue</option>
-        </select>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            placeholder="Buscar por cliente, nota, carregamento, placa..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="bg-slate-800 rounded-lg p-2 text-sm w-full sm:w-72"
+          />
+          <select
+            className="bg-slate-800 rounded-lg p-2 text-sm"
+            value={filtroStatus}
+            onChange={(e) => setFiltroStatus(e.target.value)}
+          >
+            <option value="">Todos os status</option>
+            <option value="agendado">Agendado</option>
+            <option value="entregue">Entregue</option>
+            <option value="ocorrencia">Ocorrência</option>
+            <option value="nao_entregue">Não entregue</option>
+          </select>
+        </div>
       </div>
 
       {erro && (
@@ -146,6 +175,7 @@ export default function EntregasPage() {
               <tr>
                 <th className="p-3">Tipo</th>
                 <th className="p-3">Carregamento</th>
+                <th className="p-3">Nota</th>
                 <th className="p-3">Cliente</th>
                 <th className="p-3">Destino</th>
                 <th className="p-3">Previsão</th>
@@ -154,10 +184,11 @@ export default function EntregasPage() {
               </tr>
             </thead>
             <tbody>
-              {entregas.map((e) => (
+              {entregasFiltradas.map((e) => (
                 <tr key={e.id} className="border-t border-slate-700">
                   <td className="p-3 capitalize">{e.tipo}{e.modal ? ` (${e.modal})` : ""}</td>
                   <td className="p-3">{e.numcar ?? "-"}</td>
+                  <td className="p-3">{e.numnota ?? "-"}</td>
                   <td className="p-3">{e.cliente ?? "-"}</td>
                   <td className="p-3">{e.destino ?? e.municent ?? "-"}</td>
                   <td className="p-3">{e.data_prevista ?? "-"}</td>
@@ -193,9 +224,9 @@ export default function EntregasPage() {
                   </td>
                 </tr>
               ))}
-              {entregas.length === 0 && (
+              {entregasFiltradas.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="p-6 text-center text-slate-500">
+                  <td colSpan={8} className="p-6 text-center text-slate-500">
                     Nenhuma entrega encontrada.
                   </td>
                 </tr>
