@@ -1,6 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  Search,
+  Filter,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Package,
+  Clock,
+  TriangleAlert,
+} from "lucide-react";
+import { RodoviarioArt, FluvialArt, TodosArt } from "./illustrations";
 
 interface Entrega {
   id: string;
@@ -17,11 +28,36 @@ interface Entrega {
   status: "agendado" | "entregue" | "ocorrencia" | "nao_entregue";
 }
 
-const STATUS_LABEL: Record<string, { label: string; cor: string }> = {
-  agendado: { label: "Agendado", cor: "bg-slate-600" },
-  entregue: { label: "Entregue", cor: "bg-emerald-600" },
-  ocorrencia: { label: "Ocorrência", cor: "bg-amber-600" },
-  nao_entregue: { label: "Não entregue", cor: "bg-red-600" },
+type ModalidadeFiltro = "todos" | "rodoviario" | "fluvial";
+
+const STATUS_LABEL: Record
+  string,
+  { label: string; cor: string; bg: string; borda: string }
+> = {
+  agendado: {
+    label: "Agendado",
+    cor: "var(--status-agendado)",
+    bg: "rgba(100,116,139,0.15)",
+    borda: "rgba(100,116,139,0.35)",
+  },
+  entregue: {
+    label: "Entregue",
+    cor: "var(--status-entregue)",
+    bg: "rgba(52,211,153,0.15)",
+    borda: "rgba(52,211,153,0.35)",
+  },
+  ocorrencia: {
+    label: "Ocorrência",
+    cor: "var(--status-ocorrencia)",
+    bg: "rgba(245,165,36,0.15)",
+    borda: "rgba(245,165,36,0.35)",
+  },
+  nao_entregue: {
+    label: "Não entregue",
+    cor: "var(--status-nao-entregue)",
+    bg: "rgba(240,82,107,0.15)",
+    borda: "rgba(240,82,107,0.35)",
+  },
 };
 
 export default function EntregasPage() {
@@ -31,6 +67,7 @@ export default function EntregasPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [filtroStatus, setFiltroStatus] = useState<string>("");
   const [busca, setBusca] = useState("");
+  const [modalidade, setModalidade] = useState<ModalidadeFiltro>("todos");
 
   const [modalEntrega, setModalEntrega] = useState<Entrega | null>(null);
   const [obs, setObs] = useState("");
@@ -57,23 +94,31 @@ export default function EntregasPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtroStatus]);
 
+  const entregasPorModalidade = useMemo(() => {
+    if (modalidade === "todos") return entregas;
+    return entregas.filter((e) => e.tipo === modalidade);
+  }, [entregas, modalidade]);
+
   const entregasFiltradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
-    if (!termo) return entregas;
+    if (!termo) return entregasPorModalidade;
 
-    return entregas.filter((e) => {
-      const campos = [
-        e.cliente,
-        e.numnota,
-        e.numcar,
-        e.placa,
-        e.destino,
-        e.municent,
-        e.codcli,
-      ];
+    return entregasPorModalidade.filter((e) => {
+      const campos = [e.cliente, e.numnota, e.numcar, e.placa, e.destino, e.municent, e.codcli];
       return campos.some((campo) => (campo ?? "").toLowerCase().includes(termo));
     });
-  }, [entregas, busca]);
+  }, [entregasPorModalidade, busca]);
+
+  const indicadores = useMemo(() => {
+    const total = entregasPorModalidade.length;
+    const entregues = entregasPorModalidade.filter((e) => e.status === "entregue").length;
+    const pendentes = entregasPorModalidade.filter((e) => e.status === "agendado").length;
+    const ocorrencias = entregasPorModalidade.filter((e) => e.status === "ocorrencia").length;
+    return { total, entregues, pendentes, ocorrencias };
+  }, [entregasPorModalidade]);
+
+  const totalRodoviario = entregas.filter((e) => e.tipo === "rodoviario").length;
+  const totalFluvial = entregas.filter((e) => e.tipo === "fluvial").length;
 
   async function marcarStatus(id: string, status: "entregue" | "nao_entregue") {
     setSalvandoId(id);
@@ -133,30 +178,108 @@ export default function EntregasPage() {
     }
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h2 className="text-xl font-semibold">Entregas</h2>
+  const TILES: {
+    valor: ModalidadeFiltro;
+    titulo: string;
+    subtitulo: string;
+    total: number;
+    accent: string;
+    Art: typeof RodoviarioArt;
+  }[] = [
+    {
+      valor: "rodoviario",
+      titulo: "Rodoviário",
+      subtitulo: "Entregas por estrada",
+      total: totalRodoviario,
+      accent: "var(--accent-rodo)",
+      Art: RodoviarioArt,
+    },
+    {
+      valor: "fluvial",
+      titulo: "Fluvial",
+      subtitulo: "Entregas pelos rios da Amazônia",
+      total: totalFluvial,
+      accent: "var(--accent-fluvial)",
+      Art: FluvialArt,
+    },
+    {
+      valor: "todos",
+      titulo: "Todos",
+      subtitulo: "Visão geral das duas modalidades",
+      total: entregas.length,
+      accent: "var(--text-muted)",
+      Art: TodosArt,
+    },
+  ];
 
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            placeholder="Buscar por cliente, nota, carregamento, placa..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="bg-slate-800 rounded-lg p-2 text-sm w-full sm:w-72"
-          />
-          <select
-            className="bg-slate-800 rounded-lg p-2 text-sm"
-            value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value)}
-          >
-            <option value="">Todos os status</option>
-            <option value="agendado">Agendado</option>
-            <option value="entregue">Entregue</option>
-            <option value="ocorrencia">Ocorrência</option>
-            <option value="nao_entregue">Não entregue</option>
-          </select>
+  return (
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <div>
+        <h2 className="text-2xl font-semibold font-display tracking-tight">Entregas</h2>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
+          Acompanhe e atualize o status de cada carga, separado por modal.
+        </p>
+      </div>
+
+      {/* Seletor de modalidade */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {TILES.map((tile) => {
+          const ativo = modalidade === tile.valor;
+          const Art = tile.Art;
+          return (
+            <button
+              key={tile.valor}
+              onClick={() => setModalidade(tile.valor)}
+              className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
+              style={{
+                borderColor: ativo ? tile.accent : "var(--border-subtle)",
+                boxShadow: ativo ? `0 0 0 1px ${tile.accent}, 0 8px 24px -8px ${tile.accent}55` : "none",
+                opacity: ativo ? 1 : 0.85,
+              }}
+            >
+              <Art active={ativo} />
+              <div className="p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display font-medium text-base">{tile.titulo}</h3>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full font-mono-data"
+                    style={{ color: tile.accent, backgroundColor: `${tile.accent}22` }}
+                  >
+                    {tile.total}
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mt-1">{tile.subtitulo}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Indicadores */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="glass-surface rounded-xl p-3">
+          <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs">
+            <Package size={14} /> Total
+          </div>
+          <p className="text-xl font-semibold font-mono-data mt-1">{indicadores.total}</p>
+        </div>
+        <div className="glass-surface rounded-xl p-3">
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--status-entregue)" }}>
+            <CheckCircle2 size={14} /> Entregues
+          </div>
+          <p className="text-xl font-semibold font-mono-data mt-1">{indicadores.entregues}</p>
+        </div>
+        <div className="glass-surface rounded-xl p-3">
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--status-agendado)" }}>
+            <Clock size={14} /> Pendentes
+          </div>
+          <p className="text-xl font-semibold font-mono-data mt-1">{indicadores.pendentes}</p>
+        </div>
+        <div className="glass-surface rounded-xl p-3">
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--status-ocorrencia)" }}>
+            <TriangleAlert size={14} /> Ocorrências
+          </div>
+          <p className="text-xl font-semibold font-mono-data mt-1">{indicadores.ocorrencias}</p>
         </div>
       </div>
 
@@ -166,68 +289,109 @@ export default function EntregasPage() {
         </div>
       )}
 
+      {/* Barra de busca e filtro */}
+      <div className="glass-surface rounded-xl p-3 flex flex-col sm:flex-row gap-3">
+        <div className="flex items-center gap-2 flex-1 bg-black/20 rounded-lg px-3 py-2">
+          <Search size={16} className="text-[var(--text-muted)]" />
+          <input
+            type="text"
+            placeholder="Buscar por cliente, nota, carregamento, placa..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="bg-transparent outline-none text-sm w-full placeholder:text-[var(--text-muted)]"
+          />
+        </div>
+        <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-2">
+          <Filter size={16} className="text-[var(--text-muted)]" />
+          <select
+            className="bg-transparent outline-none text-sm"
+            value={filtroStatus}
+            onChange={(e) => setFiltroStatus(e.target.value)}
+          >
+            <option value="" className="bg-slate-900">Todos os status</option>
+            <option value="agendado" className="bg-slate-900">Agendado</option>
+            <option value="entregue" className="bg-slate-900">Entregue</option>
+            <option value="ocorrencia" className="bg-slate-900">Ocorrência</option>
+            <option value="nao_entregue" className="bg-slate-900">Não entregue</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Tabela */}
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-[var(--text-muted)] text-sm">Carregando...</p>
       ) : (
-        <div className="bg-slate-800 rounded-xl overflow-hidden overflow-x-auto">
+        <div className="glass-surface rounded-2xl overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-700 text-left">
+            <thead className="bg-black/20 text-left text-[var(--text-muted)]">
               <tr>
-                <th className="p-3">Tipo</th>
-                <th className="p-3">Carregamento</th>
-                <th className="p-3">Nota</th>
-                <th className="p-3">Cliente</th>
-                <th className="p-3">Destino</th>
-                <th className="p-3">Previsão</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Ações</th>
+                <th className="p-3 font-medium">Tipo</th>
+                <th className="p-3 font-medium">Carregamento</th>
+                <th className="p-3 font-medium">Nota</th>
+                <th className="p-3 font-medium">Cliente</th>
+                <th className="p-3 font-medium">Destino</th>
+                <th className="p-3 font-medium">Previsão</th>
+                <th className="p-3 font-medium">Status</th>
+                <th className="p-3 font-medium">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {entregasFiltradas.map((e) => (
-                <tr key={e.id} className="border-t border-slate-700">
-                  <td className="p-3 capitalize">{e.tipo}{e.modal ? ` (${e.modal})` : ""}</td>
-                  <td className="p-3">{e.numcar ?? "-"}</td>
-                  <td className="p-3">{e.numnota ?? "-"}</td>
-                  <td className="p-3">{e.cliente ?? "-"}</td>
-                  <td className="p-3">{e.destino ?? e.municent ?? "-"}</td>
-                  <td className="p-3">{e.data_prevista ?? "-"}</td>
-                  <td className="p-3">
-                    <span className={`text-xs rounded-full px-2 py-1 text-white ${STATUS_LABEL[e.status]?.cor ?? "bg-slate-600"}`}>
-                      {STATUS_LABEL[e.status]?.label ?? e.status}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex gap-1">
-                      <button
-                        disabled={salvandoId === e.id}
-                        onClick={() => marcarStatus(e.id, "entregue")}
-                        className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs rounded-lg px-2 py-1"
+              {entregasFiltradas.map((e) => {
+                const st = STATUS_LABEL[e.status] ?? STATUS_LABEL.agendado;
+                return (
+                  <tr key={e.id} className="border-t border-[var(--border-subtle)] hover:bg-white/[0.02]">
+                    <td className="p-3 capitalize">
+                      {e.tipo}
+                      {e.modal ? ` (${e.modal})` : ""}
+                    </td>
+                    <td className="p-3 font-mono-data text-[var(--text-primary)]">{e.numcar ?? "-"}</td>
+                    <td className="p-3 font-mono-data text-[var(--text-primary)]">{e.numnota ?? "-"}</td>
+                    <td className="p-3">{e.cliente ?? "-"}</td>
+                    <td className="p-3">{e.destino ?? e.municent ?? "-"}</td>
+                    <td className="p-3">{e.data_prevista ?? "-"}</td>
+                    <td className="p-3">
+                      <span
+                        className="text-xs rounded-full px-2 py-1 border"
+                        style={{ color: st.cor, backgroundColor: st.bg, borderColor: st.borda }}
                       >
-                        Entregue
-                      </button>
-                      <button
-                        disabled={salvandoId === e.id}
-                        onClick={() => abrirModalOcorrencia(e)}
-                        className="bg-amber-700 hover:bg-amber-600 disabled:opacity-50 text-white text-xs rounded-lg px-2 py-1"
-                      >
-                        Ocorrência
-                      </button>
-                      <button
-                        disabled={salvandoId === e.id}
-                        onClick={() => marcarStatus(e.id, "nao_entregue")}
-                        className="bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white text-xs rounded-lg px-2 py-1"
-                      >
-                        Não entregue
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {st.label}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex gap-1.5">
+                        <button
+                          disabled={salvandoId === e.id}
+                          onClick={() => marcarStatus(e.id, "entregue")}
+                          title="Marcar como entregue"
+                          className="flex items-center gap-1 border border-[var(--status-entregue)]/40 text-[var(--status-entregue)] hover:bg-[var(--status-entregue)]/10 disabled:opacity-40 text-xs rounded-lg px-2 py-1 transition-colors"
+                        >
+                          <CheckCircle2 size={13} /> Entregue
+                        </button>
+                        <button
+                          disabled={salvandoId === e.id}
+                          onClick={() => abrirModalOcorrencia(e)}
+                          title="Registrar ocorrência"
+                          className="flex items-center gap-1 border border-[var(--status-ocorrencia)]/40 text-[var(--status-ocorrencia)] hover:bg-[var(--status-ocorrencia)]/10 disabled:opacity-40 text-xs rounded-lg px-2 py-1 transition-colors"
+                        >
+                          <AlertTriangle size={13} /> Ocorrência
+                        </button>
+                        <button
+                          disabled={salvandoId === e.id}
+                          onClick={() => marcarStatus(e.id, "nao_entregue")}
+                          title="Marcar como não entregue"
+                          className="flex items-center gap-1 border border-[var(--status-nao-entregue)]/40 text-[var(--status-nao-entregue)] hover:bg-[var(--status-nao-entregue)]/10 disabled:opacity-40 text-xs rounded-lg px-2 py-1 transition-colors"
+                        >
+                          <XCircle size={13} /> Não entregue
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {entregasFiltradas.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="p-6 text-center text-slate-500">
-                    Nenhuma entrega encontrada.
+                  <td colSpan={8} className="p-8 text-center text-[var(--text-muted)]">
+                    Nenhuma entrega encontrada para esse filtro.
                   </td>
                 </tr>
               )}
@@ -236,24 +400,25 @@ export default function EntregasPage() {
         </div>
       )}
 
+      {/* Modal de ocorrência */}
       {modalEntrega && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full space-y-4">
-            <h3 className="text-lg font-semibold">Registrar ocorrência</h3>
+          <div className="glass-surface rounded-2xl p-6 max-w-md w-full space-y-4" style={{ backgroundColor: "#101b29" }}>
+            <h3 className="text-lg font-semibold font-display">Registrar ocorrência</h3>
 
-            <div className="text-sm text-slate-300 space-y-1">
-              <p><span className="text-slate-500">Carregamento:</span> {modalEntrega.numcar ?? "-"}</p>
-              <p><span className="text-slate-500">Nota fiscal:</span> {modalEntrega.numnota ?? "-"}</p>
-              <p><span className="text-slate-500">Cliente:</span> {modalEntrega.cliente ?? "-"}</p>
-              <p><span className="text-slate-500">Código cliente:</span> {modalEntrega.codcli ?? "-"}</p>
-              <p><span className="text-slate-500">Placa:</span> {modalEntrega.placa ?? "-"}</p>
-              <p><span className="text-slate-500">Destino:</span> {modalEntrega.destino ?? modalEntrega.municent ?? "-"}</p>
+            <div className="text-sm text-[var(--text-muted)] space-y-1">
+              <p><span className="text-[var(--text-primary)]">Carregamento:</span> {modalEntrega.numcar ?? "-"}</p>
+              <p><span className="text-[var(--text-primary)]">Nota fiscal:</span> {modalEntrega.numnota ?? "-"}</p>
+              <p><span className="text-[var(--text-primary)]">Cliente:</span> {modalEntrega.cliente ?? "-"}</p>
+              <p><span className="text-[var(--text-primary)]">Código cliente:</span> {modalEntrega.codcli ?? "-"}</p>
+              <p><span className="text-[var(--text-primary)]">Placa:</span> {modalEntrega.placa ?? "-"}</p>
+              <p><span className="text-[var(--text-primary)]">Destino:</span> {modalEntrega.destino ?? modalEntrega.municent ?? "-"}</p>
             </div>
 
             <label className="block text-sm">
               Observação da ocorrência
               <textarea
-                className="mt-1 w-full bg-slate-700 rounded-lg p-2 text-sm"
+                className="mt-1 w-full bg-black/20 border border-[var(--border-subtle)] rounded-lg p-2 text-sm outline-none focus:border-[var(--status-ocorrencia)]"
                 rows={4}
                 value={obs}
                 onChange={(e) => setObs(e.target.value)}
@@ -264,14 +429,15 @@ export default function EntregasPage() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setModalEntrega(null)}
-                className="px-4 py-2 text-sm rounded-lg bg-slate-700 hover:bg-slate-600"
+                className="px-4 py-2 text-sm rounded-lg border border-[var(--border-subtle)] hover:bg-white/5"
               >
                 Cancelar
               </button>
               <button
                 onClick={enviarOcorrencia}
                 disabled={enviandoOcorrencia}
-                className="px-4 py-2 text-sm rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-50"
+                className="px-4 py-2 text-sm rounded-lg text-black font-medium disabled:opacity-50"
+                style={{ backgroundColor: "var(--status-ocorrencia)" }}
               >
                 {enviandoOcorrencia ? "Salvando..." : "Salvar ocorrência"}
               </button>
