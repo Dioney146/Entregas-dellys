@@ -15,7 +15,7 @@ export async function getDoc() {
   return doc;
 }
 
-export async function getSheet(nome: "entregas" | "cronograma") {
+export async function getSheet(nome: "entregas" | "cronograma" | "ocorrencias") {
   const doc = await getDoc();
   const sheet = doc.sheetsByTitle[nome];
   if (!sheet) throw new Error(`Aba "${nome}" não encontrada na planilha.`);
