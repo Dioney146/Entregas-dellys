@@ -11,7 +11,7 @@ import {
   Clock,
   TriangleAlert,
 } from "lucide-react";
-import { RodoviarioArt, FluvialArt, TodosArt } from "./illustrations";
+import { RodoviarioArt, FluvialArt } from "./illustrations";
 
 interface Entrega {
   id: string;
@@ -28,7 +28,7 @@ interface Entrega {
   status: "agendado" | "entregue" | "ocorrencia" | "nao_entregue";
 }
 
-type ModalidadeFiltro = "todos" | "rodoviario" | "fluvial";
+type ModalidadeFiltro = "rodoviario" | "fluvial";
 
 interface StatusInfo {
   label: string;
@@ -71,7 +71,7 @@ export default function EntregasPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [filtroStatus, setFiltroStatus] = useState<string>("");
   const [busca, setBusca] = useState("");
-  const [modalidade, setModalidade] = useState<ModalidadeFiltro>("todos");
+  const [modalidade, setModalidade] = useState<ModalidadeFiltro>("rodoviario");
 
   const [modalEntrega, setModalEntrega] = useState<Entrega | null>(null);
   const [obs, setObs] = useState("");
@@ -99,7 +99,6 @@ export default function EntregasPage() {
   }, [filtroStatus]);
 
   const entregasPorModalidade = useMemo(() => {
-    if (modalidade === "todos") return entregas;
     return entregas.filter((e) => e.tipo === modalidade);
   }, [entregas, modalidade]);
 
@@ -196,13 +195,6 @@ export default function EntregasPage() {
     total: totalFluvial,
     accent: "var(--accent-fluvial)",
   };
-  const tileTodos = {
-    valor: "todos" as ModalidadeFiltro,
-    titulo: "Todos",
-    subtitulo: "Visão geral das duas modalidades",
-    total: entregas.length,
-    accent: "var(--text-muted)",
-  };
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -213,7 +205,7 @@ export default function EntregasPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button
           onClick={() => setModalidade(tileRodoviario.valor)}
           className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
@@ -265,33 +257,6 @@ export default function EntregasPage() {
               </span>
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-1">{tileFluvial.subtitulo}</p>
-          </div>
-        </button>
-
-        <button
-          onClick={() => setModalidade(tileTodos.valor)}
-          className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
-          style={{
-            borderColor: modalidade === "todos" ? tileTodos.accent : "var(--border-subtle)",
-            boxShadow:
-              modalidade === "todos"
-                ? `0 0 0 1px ${tileTodos.accent}, 0 8px 24px -8px ${tileTodos.accent}55`
-                : "none",
-            opacity: modalidade === "todos" ? 1 : 0.85,
-          }}
-        >
-          <TodosArt active={modalidade === "todos"} />
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-display font-medium text-base">{tileTodos.titulo}</h3>
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-mono-data"
-                style={{ color: tileTodos.accent, backgroundColor: `${tileTodos.accent}22` }}
-              >
-                {tileTodos.total}
-              </span>
-            </div>
-            <p className="text-xs text-[var(--text-muted)] mt-1">{tileTodos.subtitulo}</p>
           </div>
         </button>
       </div>
