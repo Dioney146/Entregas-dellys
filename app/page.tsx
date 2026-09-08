@@ -21,6 +21,8 @@ import {
   PieChart,
   Pie,
   Cell,
+  BarChart,
+  Bar,
 } from "recharts";
 
 interface Entrega {
@@ -216,6 +218,37 @@ export default function DashboardPage() {
     });
   }, [entregasFiltradas]);
 
+  const dadosPorCarregamento = useMemo(() => {
+    const mapa = new Map
+      string,
+      { carregamento: string; Entregue: number; Ocorrência: number; "Não entregue": number; Agendado: number; total: number }
+    >();
+
+    entregasFiltradas.forEach((x) => {
+      const numcar = x.entrega.numcar?.trim() || "Sem número";
+      if (!mapa.has(numcar)) {
+        mapa.set(numcar, {
+          carregamento: numcar,
+          Entregue: 0,
+          Ocorrência: 0,
+          "Não entregue": 0,
+          Agendado: 0,
+          total: 0,
+        });
+      }
+      const registro = mapa.get(numcar)!;
+      registro.total += 1;
+      if (x.entrega.status === "entregue") registro.Entregue += 1;
+      else if (x.entrega.status === "ocorrencia") registro.Ocorrência += 1;
+      else if (x.entrega.status === "nao_entregue") registro["Não entregue"] += 1;
+      else registro.Agendado += 1;
+    });
+
+    return Array.from(mapa.values())
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 7);
+  }, [entregasFiltradas]);
+
   const maxDestino = Math.max(1, ...dadosPorDestino.map((d) => d.valor));
 
   return (
@@ -383,26 +416,67 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="glass-surface rounded-2xl p-5">
-            <p className="text-sm font-medium mb-4 text-[var(--text-muted)]">Entregas por destino</p>
-            <div className="space-y-3">
-              {dadosPorDestino.map((d, idx) => (
-                <div key={idx} className="flex items-center gap-3">
-                  <span className="text-xs text-[var(--text-muted)] w-32 truncate">{d.nome}</span>
-                  <div className="flex-1 bg-black/20 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${(d.valor / maxDestino) * 100}%`,
-                        backgroundColor: "var(--accent-brand)",
-                      }}
-                    />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="glass-surface rounded-2xl p-5">
+              <p className="text-sm font-medium mb-4 text-[var(--text-muted)]">Entregas por destino</p>
+              <div className="space-y-3">
+                {dadosPorDestino.map((d, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <span className="text-xs text-[var(--text-muted)] w-32 truncate">{d.nome}</span>
+                    <div className="flex-1 bg-black/20 rounded-full h-3 overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${(d.valor / maxDestino) * 100}%`,
+                          backgroundColor: "var(--accent-brand)",
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs font-mono-data w-8 text-right">{d.valor}</span>
                   </div>
-                  <span className="text-xs font-mono-data w-8 text-right">{d.valor}</span>
-                </div>
-              ))}
-              {dadosPorDestino.length === 0 && (
-                <p className="text-sm text-[var(--text-muted)]">Sem dados no período.</p>
+                ))}
+                {dadosPorDestino.length === 0 && (
+                  <p className="text-sm text-[var(--text-muted)]">Sem dados no período.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="glass-surface rounded-2xl p-5">
+              <p className="text-sm font-medium mb-4 text-[var(--text-muted)]">Entregas por carregamento</p>
+              <ResponsiveContainer width="100%" height={Math.max(180, dadosPorCarregamento.length * 36)}>
+                <BarChart data={dadosPorCarregamento} layout="vertical" margin={{ left: 0 }}>
+                  <XAxis type="number" hide allowDecimals={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="carregamento"
+                    tick={{ fill: "#e8eef4", fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={80}
+                  />
+                  <Tooltip content={<TooltipEscuro />} />
+                  <Bar dataKey="Entregue" stackId="a" fill="var(--status-entregue)" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="Ocorrência" stackId="a" fill="var(--status-ocorrencia)" />
+                  <Bar dataKey="Não entregue" stackId="a" fill="var(--status-nao-entregue)" />
+                  <Bar dataKey="Agendado" stackId="a" fill="var(--status-agendado)" radius={[0, 6, 6, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-3 mt-2 text-xs text-[var(--text-muted)]">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--status-entregue)" }} /> Entregue
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--status-ocorrencia)" }} /> Ocorrência
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--status-nao-entregue)" }} /> Não entregue
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--status-agendado)" }} /> Agendado
+                </span>
+              </div>
+              {dadosPorCarregamento.length === 0 && (
+                <p className="text-sm text-[var(--text-muted)] mt-2">Sem dados no período.</p>
               )}
             </div>
           </div>
