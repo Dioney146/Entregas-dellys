@@ -84,7 +84,7 @@ export default function EntregasPage() {
   const [carregando, setCarregando] = useState(true);
   const [salvandoId, setSalvandoId] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const [filtroStatus, setFiltroStatus] = useState<string>("");
+  const [filtroStatus, setFiltroStatus] = useState<string>("agendado");
   const [busca, setBusca] = useState("");
   const [modalidade, setModalidade] = useState<ModalidadeFiltro>("rodoviario");
 
@@ -138,6 +138,10 @@ export default function EntregasPage() {
   const totalRodoviario = entregas.filter((e) => e.tipo === "rodoviario").length;
   const totalFluvial = entregas.filter((e) => e.tipo === "fluvial").length;
 
+  function removerDaLista(id: string) {
+    setEntregas((prev) => prev.filter((e) => e.id !== id));
+  }
+
   async function marcarStatus(id: string, status: "entregue" | "nao_entregue") {
     setSalvandoId(id);
     try {
@@ -151,9 +155,7 @@ export default function EntregasPage() {
         const json = await resp.json();
         throw new Error(json.error ?? "Erro ao atualizar status");
       }
-      setEntregas((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, status, data_realizada: dataRealizada } : e))
-      );
+      removerDaLista(id);
     } catch (e: any) {
       alert(e.message ?? "Erro ao atualizar status");
     } finally {
@@ -189,11 +191,7 @@ export default function EntregasPage() {
       const json = await resp.json();
       if (!resp.ok) throw new Error(json.error ?? "Erro ao registrar ocorrência");
 
-      setEntregas((prev) =>
-        prev.map((e) =>
-          e.id === modalEntrega.id ? { ...e, status: "ocorrencia", data_realizada: dataRealizada } : e
-        )
-      );
+      removerDaLista(modalEntrega.id);
       setModalEntrega(null);
     } catch (e: any) {
       alert(e.message ?? "Erro ao registrar ocorrência");
