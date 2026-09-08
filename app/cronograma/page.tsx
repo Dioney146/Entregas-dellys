@@ -188,7 +188,7 @@ export default function CronogramaPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-[1500px] mx-auto">
+    <div className="space-y-6 w-full">
       <div>
         <h2 className="text-2xl font-semibold font-display tracking-tight">
           Cronograma Anual de Entregas
