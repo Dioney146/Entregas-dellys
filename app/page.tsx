@@ -42,6 +42,15 @@ interface Entrega {
 
 type ModalidadeFiltro = "todos" | "rodoviario" | "fluvial";
 
+interface CarregamentoInfo {
+  carregamento: string;
+  Entregue: number;
+  Ocorrencia: number;
+  NaoEntregue: number;
+  Agendado: number;
+  total: number;
+}
+
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
@@ -219,10 +228,7 @@ export default function DashboardPage() {
   }, [entregasFiltradas]);
 
   const dadosPorCarregamento = useMemo(() => {
-    const mapa = new Map
-      string,
-      { carregamento: string; Entregue: number; Ocorrência: number; "Não entregue": number; Agendado: number; total: number }
-    >();
+    const mapa = new Map<string, CarregamentoInfo>();
 
     entregasFiltradas.forEach((x) => {
       const numcar = x.entrega.numcar?.trim() || "Sem número";
@@ -230,8 +236,8 @@ export default function DashboardPage() {
         mapa.set(numcar, {
           carregamento: numcar,
           Entregue: 0,
-          Ocorrência: 0,
-          "Não entregue": 0,
+          Ocorrencia: 0,
+          NaoEntregue: 0,
           Agendado: 0,
           total: 0,
         });
@@ -239,8 +245,8 @@ export default function DashboardPage() {
       const registro = mapa.get(numcar)!;
       registro.total += 1;
       if (x.entrega.status === "entregue") registro.Entregue += 1;
-      else if (x.entrega.status === "ocorrencia") registro.Ocorrência += 1;
-      else if (x.entrega.status === "nao_entregue") registro["Não entregue"] += 1;
+      else if (x.entrega.status === "ocorrencia") registro.Ocorrencia += 1;
+      else if (x.entrega.status === "nao_entregue") registro.NaoEntregue += 1;
       else registro.Agendado += 1;
     });
 
@@ -455,9 +461,9 @@ export default function DashboardPage() {
                     width={80}
                   />
                   <Tooltip content={<TooltipEscuro />} />
-                  <Bar dataKey="Entregue" stackId="a" fill="var(--status-entregue)" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="Ocorrência" stackId="a" fill="var(--status-ocorrencia)" />
-                  <Bar dataKey="Não entregue" stackId="a" fill="var(--status-nao-entregue)" />
+                  <Bar dataKey="Entregue" stackId="a" fill="var(--status-entregue)" />
+                  <Bar dataKey="Ocorrencia" stackId="a" fill="var(--status-ocorrencia)" />
+                  <Bar dataKey="NaoEntregue" stackId="a" fill="var(--status-nao-entregue)" />
                   <Bar dataKey="Agendado" stackId="a" fill="var(--status-agendado)" radius={[0, 6, 6, 0]} />
                 </BarChart>
               </ResponsiveContainer>
