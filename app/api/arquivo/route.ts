@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { listarArquivo } from "@/lib/arquivo";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const registros = await listarArquivo();
