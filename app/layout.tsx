@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 
 const spaceGrotesk = Space_Grotesk({
@@ -35,9 +36,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <div className="min-h-screen flex flex-col">
           <header className="border-b border-slate-700/60 px-6 py-4 flex items-center justify-between backdrop-blur-sm">
-            <h1 className="text-lg font-semibold font-display tracking-tight">
-              Controle de Entregas — Delly&apos;s
-            </h1>
+            <div className="flex items-center gap-3">
+              <Image src="/logo.webp" alt="Delly's" width={36} height={36} className="object-contain" />
+              <h1 className="text-lg font-semibold font-display tracking-tight">
+                Controle de Entregas — Delly&apos;s
+              </h1>
+            </div>
             <nav className="flex gap-5 text-sm text-slate-300">
               <Link href="/" className="hover:text-white transition-colors">Dashboard</Link>
               <Link href="/entregas" className="hover:text-white transition-colors">Entregas</Link>
