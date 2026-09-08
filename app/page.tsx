@@ -219,7 +219,7 @@ export default function DashboardPage() {
   const maxDestino = Math.max(1, ...dadosPorDestino.map((d) => d.valor));
 
   return (
-    <div className="space-y-6 w-full max-w-[1400px] mx-auto">
+    <div className="space-y-6 w-full">
       <div className="glass-surface rounded-2xl p-4 flex flex-wrap items-center gap-3">
         <select
           className="bg-black/20 rounded-lg px-3 py-2 text-sm outline-none"
