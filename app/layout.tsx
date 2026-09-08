@@ -24,6 +24,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Controle de Entregas Delly's",
   description: "Cronograma e acompanhamento de entregas fluviais e rodoviárias",
+  icons: {
+    icon: "/logo.webp",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
