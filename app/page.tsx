@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import {
   Package,
@@ -10,7 +9,6 @@ import {
   XCircle,
   Truck,
   Ship,
-  ArrowRight,
 } from "lucide-react";
 import {
   AreaChart,
@@ -61,14 +59,6 @@ const LABEL_STATUS: Record<string, string> = {
   nao_entregue: "Não entregue",
 };
 
-const ROTAS_DESTAQUE = [
-  "Manacapuru",
-  "Itacoatiara",
-  "Iranduba",
-  "Careiro da Várzea",
-  "Autazes",
-];
-
 function normalizarTexto(txt: string): string {
   return txt
     .normalize("NFD")
@@ -101,11 +91,12 @@ function CardKpi({
   Icone: any;
 }) {
   return (
-    <div className="glass-surface rounded-xl p-4 flex-1 min-w-[140px]">
-      <div className="flex items-center gap-2 text-xs" style={{ color: cor }}>
-        <Icone size={14} /> {label}
+    <div className="glass-surface rounded-2xl p-5">
+      <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+        <Icone size={15} style={{ color: cor }} />
+        {label}
       </div>
-      <p className="text-2xl font-bold font-mono-data mt-1 text-[var(--text-primary)]">{valor}</p>
+      <p className="text-3xl font-bold font-mono-data mt-2 text-[var(--text-primary)]">{valor}</p>
     </div>
   );
 }
@@ -225,49 +216,10 @@ export default function DashboardPage() {
     });
   }, [entregasFiltradas]);
 
-  const dadosVeiculos = useMemo(() => {
-    const mapa = new Map<string, { placa: string; tipo: string; viagens: Set<string> }>();
-    entregasFiltradas.forEach((x) => {
-      const placa = x.entrega.placa?.trim();
-      if (!placa) return;
-      if (!mapa.has(placa)) {
-        mapa.set(placa, { placa, tipo: x.entrega.tipo, viagens: new Set<string>() });
-      }
-      const chaveViagem = x.entrega.numcar?.trim() || x.entrega.id;
-      mapa.get(placa)!.viagens.add(chaveViagem);
-    });
-    return Array.from(mapa.values())
-      .map((v) => ({ placa: v.placa, tipo: v.tipo, total: v.viagens.size }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 8);
-  }, [entregasFiltradas]);
-
-  const maxVeiculo = Math.max(1, ...dadosVeiculos.map((v) => v.total));
-
-  const rotasComContagem = useMemo(() => {
-    return ROTAS_DESTAQUE.map((rota) => {
-      const alvo = normalizarTexto(rota);
-      const doRota = entregasDoPeriodo.filter((x) => {
-        const destino = normalizarTexto(x.entrega.municent || x.entrega.destino || "");
-        return destino.includes(alvo) || alvo.includes(destino);
-      });
-      const rodo = doRota.filter((x) => x.entrega.tipo === "rodoviario").length;
-      const fluv = doRota.filter((x) => x.entrega.tipo === "fluvial").length;
-      return { rota, total: doRota.length, rodo, fluv };
-    });
-  }, [entregasDoPeriodo]);
-
-  const proximasEntregas = useMemo(() => {
-    return entregasFiltradas
-      .filter((x) => x.entrega.status === "agendado")
-      .slice(0, 6)
-      .map((x) => x.entrega);
-  }, [entregasFiltradas]);
-
   const maxDestino = Math.max(1, ...dadosPorDestino.map((d) => d.valor));
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6 w-full max-w-[1400px] mx-auto">
       <div className="glass-surface rounded-2xl p-4 flex flex-wrap items-center gap-3">
         <select
           className="bg-black/20 rounded-lg px-3 py-2 text-sm outline-none"
@@ -331,7 +283,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="relative rounded-2xl overflow-hidden min-h-[260px] flex items-end">
+      <div className="relative rounded-2xl overflow-hidden h-28 sm:h-36">
         <Image
           src="/dashboard-hero.jpg"
           alt="Vista aérea de Manaus"
@@ -344,27 +296,35 @@ export default function DashboardPage() {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(10,18,28,0.25) 0%, rgba(10,18,28,0.65) 55%, rgba(10,18,28,0.95) 100%)",
+              "linear-gradient(90deg, rgba(10,18,28,0.9) 0%, rgba(10,18,28,0.55) 45%, rgba(10,18,28,0.15) 100%)",
           }}
         />
-        <div className="relative w-full p-4 sm:p-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <CardKpi label="Total de cargas" valor={kpis.total} cor="var(--text-muted)" Icone={Package} />
-            <CardKpi label="Entregues" valor={kpis.entregues} cor="var(--status-entregue)" Icone={CheckCircle2} />
-            <CardKpi label="Ocorrências" valor={kpis.ocorrencias} cor="var(--status-ocorrencia)" Icone={AlertTriangle} />
-            <CardKpi label="Não entregues" valor={kpis.naoEntregues} cor="var(--status-nao-entregue)" Icone={XCircle} />
-            <CardKpi label="Fluvial" valor={kpis.fluvial} cor="var(--accent-fluvial)" Icone={Ship} />
-            <CardKpi label="Rodoviário" valor={kpis.rodoviario} cor="var(--accent-rodo)" Icone={Truck} />
+        <div className="relative h-full flex items-center px-6">
+          <div>
+            <p className="text-xs uppercase tracking-widest" style={{ color: "var(--accent-brand)" }}>
+              Delly&apos;s Food Service
+            </p>
+            <p className="text-lg sm:text-xl font-semibold font-display mt-1">
+              Operação logística em tempo real
+            </p>
           </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <CardKpi label="Total de cargas" valor={kpis.total} cor="var(--accent-brand)" Icone={Package} />
+        <CardKpi label="Entregues" valor={kpis.entregues} cor="var(--status-entregue)" Icone={CheckCircle2} />
+        <CardKpi label="Ocorrências" valor={kpis.ocorrencias} cor="var(--status-ocorrencia)" Icone={AlertTriangle} />
+        <CardKpi label="Não entregues" valor={kpis.naoEntregues} cor="var(--status-nao-entregue)" Icone={XCircle} />
+        <CardKpi label="Rodoviário" valor={kpis.rodoviario} cor="var(--accent-rodo)" Icone={Truck} />
       </div>
 
       {!carregando && (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="glass-surface rounded-2xl p-4 lg:col-span-2">
-              <p className="text-sm font-medium mb-3">Entregas por dia</p>
-              <ResponsiveContainer width="100%" height={220}>
+            <div className="glass-surface rounded-2xl p-5 lg:col-span-2">
+              <p className="text-sm font-medium mb-4 text-[var(--text-muted)]">Entregas por dia</p>
+              <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={dadosPorDia}>
                   <defs>
                     <linearGradient id="corRodo" x1="0" y1="0" x2="0" y2="1">
@@ -376,7 +336,7 @@ export default function DashboardPage() {
                       <stop offset="95%" stopColor="var(--accent-fluvial)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
                   <XAxis dataKey="dia" tick={{ fill: "#7e92a6", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "#7e92a6", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip content={<TooltipEscuro />} />
@@ -390,16 +350,16 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             </div>
 
-            <div className="glass-surface rounded-2xl p-4">
-              <p className="text-sm font-medium mb-3">Status das entregas</p>
-              <ResponsiveContainer width="100%" height={180}>
+            <div className="glass-surface rounded-2xl p-5 flex flex-col">
+              <p className="text-sm font-medium mb-4 text-[var(--text-muted)]">Status das entregas</p>
+              <ResponsiveContainer width="100%" height={190}>
                 <PieChart>
                   <Pie
                     data={dadosStatus}
                     dataKey="valor"
                     nameKey="nome"
-                    innerRadius={45}
-                    outerRadius={70}
+                    innerRadius={50}
+                    outerRadius={78}
                     paddingAngle={3}
                   >
                     {dadosStatus.map((d, idx) => (
@@ -409,7 +369,7 @@ export default function DashboardPage() {
                   <Tooltip content={<TooltipEscuro />} />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="space-y-1 mt-2">
+              <div className="space-y-1.5 mt-3">
                 {dadosStatus.map((d, idx) => (
                   <div key={idx} className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
@@ -423,104 +383,27 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="glass-surface rounded-2xl p-4 lg:col-span-2">
-              <p className="text-sm font-medium mb-3">Entregas por destino</p>
-              <div className="space-y-2">
-                {dadosPorDestino.map((d, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
-                    <span className="text-xs text-[var(--text-muted)] w-32 truncate">{d.nome}</span>
-                    <div className="flex-1 bg-black/20 rounded-full h-3 overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${(d.valor / maxDestino) * 100}%`,
-                          backgroundColor: "var(--accent-rodo)",
-                        }}
-                      />
-                    </div>
-                    <span className="text-xs font-mono-data w-8 text-right">{d.valor}</span>
-                  </div>
-                ))}
-                {dadosPorDestino.length === 0 && (
-                  <p className="text-sm text-[var(--text-muted)]">Sem dados no período.</p>
-                )}
-              </div>
-            </div>
-
-            <div className="glass-surface rounded-2xl p-4">
-              <p className="text-sm font-medium mb-3">Veículos · viagens no período</p>
-              <div className="space-y-2">
-                {dadosVeiculos.map((v, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <span
-                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{ backgroundColor: v.tipo === "fluvial" ? "var(--accent-fluvial)" : "var(--accent-rodo)" }}
+          <div className="glass-surface rounded-2xl p-5">
+            <p className="text-sm font-medium mb-4 text-[var(--text-muted)]">Entregas por destino</p>
+            <div className="space-y-3">
+              {dadosPorDestino.map((d, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                  <span className="text-xs text-[var(--text-muted)] w-32 truncate">{d.nome}</span>
+                  <div className="flex-1 bg-black/20 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${(d.valor / maxDestino) * 100}%`,
+                        backgroundColor: "var(--accent-brand)",
+                      }}
                     />
-                    <span className="text-xs font-mono-data w-20 truncate">{v.placa}</span>
-                    <div className="flex-1 bg-black/20 rounded-full h-2.5 overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${(v.total / maxVeiculo) * 100}%`,
-                          backgroundColor: v.tipo === "fluvial" ? "var(--accent-fluvial)" : "var(--accent-rodo)",
-                        }}
-                      />
-                    </div>
-                    <span className="text-xs font-mono-data w-6 text-right">{v.total}</span>
                   </div>
-                ))}
-                {dadosVeiculos.length === 0 && (
-                  <p className="text-xs text-[var(--text-muted)]">Sem placas registradas no período.</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="glass-surface rounded-2xl p-4 lg:col-span-2">
-              <p className="text-sm font-medium mb-3">Rotas em destaque</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {rotasComContagem.map((r, idx) => (
-                  <div key={idx} className="bg-black/20 rounded-xl p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Manaus → {r.rota}</span>
-                      <span className="text-lg font-bold font-mono-data">{r.total}</span>
-                    </div>
-                    <div className="flex gap-3 mt-2 text-xs">
-                      <span className="flex items-center gap-1" style={{ color: "var(--accent-rodo)" }}>
-                        <Truck size={12} /> {r.rodo}
-                      </span>
-                      <span className="flex items-center gap-1" style={{ color: "var(--accent-fluvial)" }}>
-                        <Ship size={12} /> {r.fluv}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="glass-surface rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium">Próximas entregas</p>
-                <Link href="/entregas" className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-white">
-                  Ver todas <ArrowRight size={12} />
-                </Link>
-              </div>
-              <div className="space-y-2">
-                {proximasEntregas.map((e) => (
-                  <div key={e.id} className="bg-black/20 rounded-lg p-2 text-xs">
-                    <p className="font-medium">{e.cliente ?? "-"}</p>
-                    <p className="text-[var(--text-muted)]">
-                      {e.destino ?? e.municent ?? "-"} · {e.tipo}
-                      {e.modal ? ` (${e.modal})` : ""}
-                    </p>
-                  </div>
-                ))}
-                {proximasEntregas.length === 0 && (
-                  <p className="text-xs text-[var(--text-muted)]">Nenhuma entrega agendada no período.</p>
-                )}
-              </div>
+                  <span className="text-xs font-mono-data w-8 text-right">{d.valor}</span>
+                </div>
+              ))}
+              {dadosPorDestino.length === 0 && (
+                <p className="text-sm text-[var(--text-muted)]">Sem dados no período.</p>
+              )}
             </div>
           </div>
         </>
