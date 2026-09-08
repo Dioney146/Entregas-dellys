@@ -13,7 +13,6 @@ interface Entrega {
   cliente: string | null;
   destino: string | null;
   municent: string | null;
-  praca: string | null;
   placa: string | null;
   status: string;
   created_at: string;
@@ -72,7 +71,7 @@ function resolverMunicipio(nomeBruto: string): string {
 }
 
 interface CelulaInfo {
-  municipio: string;
+  linha: string;
   dia: number;
   entregas: Entrega[];
 }
@@ -143,37 +142,44 @@ export default function CronogramaPage() {
   const maxMensal = Math.max(1, ...contagemPorMes.map((c) => c.rodo + c.fluvial));
 
   const linhas = useMemo(() => {
-    const mapa = new Map<string, { municipio: string; dias: Map<number, Entrega[]> }>();
+    const mapa = new Map<string, { linha: string; dias: Map<number, Entrega[]> }>();
 
     entregasDoMes.forEach((x) => {
-      const bruto = x.entrega.municent || x.entrega.destino || "Não informado";
-      const municipio = x.entrega.tipo === "rodoviario" ? resolverMunicipio(bruto) : bruto.trim();
+      let linha: string;
+
+      if (x.entrega.tipo === "rodoviario") {
+        const bruto = x.entrega.municent || x.entrega.destino || "Não informado";
+        linha = resolverMunicipio(bruto);
+      } else {
+        linha = x.entrega.modal ? x.entrega.modal.trim().toUpperCase() : "Fluvial (sem modal)";
+      }
+
       const dia = x.data.getDate();
 
-      if (!mapa.has(municipio)) {
-        mapa.set(municipio, { municipio, dias: new Map() });
+      if (!mapa.has(linha)) {
+        mapa.set(linha, { linha, dias: new Map() });
       }
-      const linha = mapa.get(municipio)!;
-      if (!linha.dias.has(dia)) linha.dias.set(dia, []);
-      linha.dias.get(dia)!.push(x.entrega);
+      const registro = mapa.get(linha)!;
+      if (!registro.dias.has(dia)) registro.dias.set(dia, []);
+      registro.dias.get(dia)!.push(x.entrega);
     });
 
-    return Array.from(mapa.values()).sort((a, b) => a.municipio.localeCompare(b.municipio));
+    return Array.from(mapa.values()).sort((a, b) => a.linha.localeCompare(b.linha));
   }, [entregasDoMes]);
 
-  const municipiosAtivos = linhas.length;
+  const linhasAtivas = linhas.length;
   const cargasNoMes = entregasDoMes.length;
   const entreguesNoMes = entregasDoMes.filter((x) => x.entrega.status === "entregue").length;
   const totalNoAno = entregasDoAno.length;
 
   function tooltipCelula(lista: Entrega[]) {
-    const linhas = lista.slice(0, 3).map((e) => {
+    const linhasTexto = lista.slice(0, 3).map((e) => {
       return `${e.cliente ?? "-"} · Nota ${e.numnota ?? "-"} · Carreg. ${e.numcar ?? "-"} · ${e.tipo}${
         e.modal ? ` (${e.modal})` : ""
       } · ${e.status}`;
     });
-    if (lista.length > 3) linhas.push(`+ ${lista.length - 3} mais`);
-    return linhas.join("\n");
+    if (lista.length > 3) linhasTexto.push(`+ ${lista.length - 3} mais`);
+    return linhasTexto.join("\n");
   }
 
   function placasDaCelula(lista: Entrega[]) {
@@ -188,7 +194,7 @@ export default function CronogramaPage() {
           Cronograma Anual de Entregas
         </h2>
         <p className="text-sm text-[var(--text-muted)] mt-1">
-          Visão por município e dia, separada por modalidade.
+          Visão por município (rodoviário) ou modal (fluvial) e dia.
         </p>
       </div>
 
@@ -277,9 +283,9 @@ export default function CronogramaPage() {
         </div>
         <div className="glass-surface rounded-xl p-3">
           <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs">
-            <MapPin size={14} /> Municípios ativos
+            <MapPin size={14} /> Municípios/Modais ativos
           </div>
-          <p className="text-xl font-semibold font-mono-data mt-1">{municipiosAtivos}</p>
+          <p className="text-xl font-semibold font-mono-data mt-1">{linhasAtivas}</p>
         </div>
       </div>
 
@@ -335,7 +341,7 @@ export default function CronogramaPage() {
                   className="sticky top-0 left-0 z-20 bg-[#101b29] p-2 text-left font-medium text-[var(--text-muted)] border-b border-r border-[var(--border-subtle)]"
                   style={{ minWidth: "130px" }}
                 >
-                  Município
+                  Município / Modal
                 </th>
                 {Array.from({ length: diasNoMes }, (_, i) => i + 1).map((dia) => {
                   const diaSemana = new Date(ano, mes - 1, dia).getDay();
@@ -364,7 +370,7 @@ export default function CronogramaPage() {
                     className="sticky left-0 z-10 bg-[#101b29] p-2 border-r border-b border-[var(--border-subtle)] font-medium text-sm"
                     style={{ minWidth: "130px" }}
                   >
-                    {linha.municipio}
+                    {linha.linha}
                   </td>
                   {Array.from({ length: diasNoMes }, (_, i) => i + 1).map((dia) => {
                     const lista = linha.dias.get(dia) ?? [];
@@ -394,7 +400,7 @@ export default function CronogramaPage() {
                         onClick={() => {
                           if (lista.length === 0) return;
                           setCelulaSelecionada({
-                            municipio: linha.municipio,
+                            linha: linha.linha,
                             dia,
                             entregas: lista,
                           });
@@ -449,7 +455,7 @@ export default function CronogramaPage() {
           >
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold font-display">
-                {celulaSelecionada.municipio} · dia {celulaSelecionada.dia}
+                {celulaSelecionada.linha} · dia {celulaSelecionada.dia}
               </h3>
               <button onClick={() => setCelulaSelecionada(null)} className="text-[var(--text-muted)] hover:text-white">
                 <X size={18} />
