@@ -63,6 +63,21 @@ const STATUS_LABEL: { [chave: string]: StatusInfo } = {
   },
 };
 
+function dataFormatada(): string {
+  const agora = new Date();
+  const dia = String(agora.getDate()).padStart(2, "0");
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  return `${dia}/${mes}/${agora.getFullYear()}`;
+}
+
+function dataHoraFormatada(): string {
+  const agora = new Date();
+  const hora = String(agora.getHours()).padStart(2, "0");
+  const min = String(agora.getMinutes()).padStart(2, "0");
+  const seg = String(agora.getSeconds()).padStart(2, "0");
+  return `${dataFormatada()} ${hora}:${min}:${seg}`;
+}
+
 export default function EntregasPage() {
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -125,7 +140,7 @@ export default function EntregasPage() {
   async function marcarStatus(id: string, status: "entregue" | "nao_entregue") {
     setSalvandoId(id);
     try {
-      const dataRealizada = new Date().toISOString().split("T")[0];
+      const dataRealizada = status === "nao_entregue" ? dataHoraFormatada() : dataFormatada();
       const resp = await fetch("/api/entregas", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -164,6 +179,7 @@ export default function EntregasPage() {
           placa: modalEntrega.placa,
           destino: modalEntrega.destino ?? modalEntrega.municent,
           obs,
+          data_realizada: dataFormatada(),
         }),
       });
       const json = await resp.json();
