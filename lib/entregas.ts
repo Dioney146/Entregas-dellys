@@ -16,7 +16,6 @@ function linhaParaEntrega(row: any, tipoFallback: TipoEntrega): Entrega {
     destino: row.get("destino") || null,
     totpeso: row.get("totpeso") || null,
     placa: row.get("placa") || null,
-    data_prevista: row.get("data_prevista") || null,
     data_realizada: row.get("data_realizada") || null,
     status: (row.get("status") || "agendado") as StatusEntrega,
     created_at: row.get("created_at") || "",
