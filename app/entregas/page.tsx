@@ -24,6 +24,7 @@ interface Entrega {
   destino: string | null;
   municent: string | null;
   placa: string | null;
+  data_realizada: string | null;
   status: "agendado" | "entregue" | "ocorrencia" | "nao_entregue";
 }
 
@@ -150,7 +151,9 @@ export default function EntregasPage() {
         const json = await resp.json();
         throw new Error(json.error ?? "Erro ao atualizar status");
       }
-      setEntregas((prev) => prev.map((e) => (e.id === id ? { ...e, status } : e)));
+      setEntregas((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, status, data_realizada: dataRealizada } : e))
+      );
     } catch (e: any) {
       alert(e.message ?? "Erro ao atualizar status");
     } finally {
@@ -167,6 +170,7 @@ export default function EntregasPage() {
     if (!modalEntrega) return;
     setEnviandoOcorrencia(true);
     try {
+      const dataRealizada = dataFormatada();
       const resp = await fetch("/api/ocorrencias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -179,14 +183,16 @@ export default function EntregasPage() {
           placa: modalEntrega.placa,
           destino: modalEntrega.destino ?? modalEntrega.municent,
           obs,
-          data_realizada: dataFormatada(),
+          data_realizada: dataRealizada,
         }),
       });
       const json = await resp.json();
       if (!resp.ok) throw new Error(json.error ?? "Erro ao registrar ocorrência");
 
       setEntregas((prev) =>
-        prev.map((e) => (e.id === modalEntrega.id ? { ...e, status: "ocorrencia" } : e))
+        prev.map((e) =>
+          e.id === modalEntrega.id ? { ...e, status: "ocorrencia", data_realizada: dataRealizada } : e
+        )
       );
       setModalEntrega(null);
     } catch (e: any) {
@@ -349,6 +355,7 @@ export default function EntregasPage() {
                 <th className="p-3 font-medium">Cliente</th>
                 <th className="p-3 font-medium">Destino</th>
                 <th className="p-3 font-medium">Status</th>
+                <th className="p-3 font-medium">Atualizado em</th>
                 <th className="p-3 font-medium">Ações</th>
               </tr>
             </thead>
@@ -372,6 +379,9 @@ export default function EntregasPage() {
                       >
                         {st.label}
                       </span>
+                    </td>
+                    <td className="p-3 font-mono-data text-[var(--text-muted)] text-xs whitespace-nowrap">
+                      {e.data_realizada ?? "-"}
                     </td>
                     <td className="p-3">
                       <div className="flex gap-1.5">
@@ -406,7 +416,7 @@ export default function EntregasPage() {
               })}
               {entregasFiltradas.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-[var(--text-muted)]">
+                  <td colSpan={8} className="p-8 text-center text-[var(--text-muted)]">
                     Nenhuma entrega encontrada para esse filtro.
                   </td>
                 </tr>
