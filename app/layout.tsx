@@ -46,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/" className="hover:text-white transition-colors">Dashboard</Link>
               <Link href="/entregas" className="hover:text-white transition-colors">Entregas</Link>
               <Link href="/cronograma" className="hover:text-white transition-colors">Cronograma</Link>
+              <Link href="/arquivo" className="hover:text-white transition-colors">Arquivo</Link>
             </nav>
           </header>
           <main className="flex-1 p-6">{children}</main>
