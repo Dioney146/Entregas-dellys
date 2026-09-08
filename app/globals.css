@@ -9,6 +9,9 @@
   --text-primary: #e8eef4;
   --text-muted: #7e92a6;
 
+  --accent-brand: #2dd9a8;
+  --accent-brand-soft: rgba(45, 217, 168, 0.15);
+
   --accent-rodo: #c98a3b;
   --accent-rodo-soft: rgba(201, 138, 59, 0.15);
   --accent-fluvial: #2fb8c6;
@@ -42,4 +45,5 @@ h3,
   background: rgba(16, 27, 41, 0.7);
   border: 1px solid var(--border-subtle);
   backdrop-filter: blur(6px);
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
 }
