@@ -24,7 +24,6 @@ interface Entrega {
   destino: string | null;
   municent: string | null;
   placa: string | null;
-  data_prevista: string | null;
   status: "agendado" | "entregue" | "ocorrencia" | "nao_entregue";
 }
 
@@ -333,7 +332,6 @@ export default function EntregasPage() {
                 <th className="p-3 font-medium">Nota</th>
                 <th className="p-3 font-medium">Cliente</th>
                 <th className="p-3 font-medium">Destino</th>
-                <th className="p-3 font-medium">Previsão</th>
                 <th className="p-3 font-medium">Status</th>
                 <th className="p-3 font-medium">Ações</th>
               </tr>
@@ -351,7 +349,6 @@ export default function EntregasPage() {
                     <td className="p-3 font-mono-data text-[var(--text-primary)]">{e.numnota ?? "-"}</td>
                     <td className="p-3">{e.cliente ?? "-"}</td>
                     <td className="p-3">{e.destino ?? e.municent ?? "-"}</td>
-                    <td className="p-3">{e.data_prevista ?? "-"}</td>
                     <td className="p-3">
                       <span
                         className="text-xs rounded-full px-2 py-1 border"
@@ -393,7 +390,7 @@ export default function EntregasPage() {
               })}
               {entregasFiltradas.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-[var(--text-muted)]">
+                  <td colSpan={7} className="p-8 text-center text-[var(--text-muted)]">
                     Nenhuma entrega encontrada para esse filtro.
                   </td>
                 </tr>
