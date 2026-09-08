@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ocorrencia = await registrarOcorrencia(dados);
-    await atualizarStatus(dados.entrega_id, "ocorrencia");
+    await atualizarStatus(dados.entrega_id, "ocorrencia", dados.data_realizada);
 
     return NextResponse.json({ ok: true, ocorrencia });
   } catch (e: any) {
