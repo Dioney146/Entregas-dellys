@@ -1,10 +1,10 @@
 import { getSheet } from "./sheets";
 import { Entrega, StatusEntrega, TipoEntrega } from "./types";
 
-function linhaParaEntrega(row: any): Entrega {
+function linhaParaEntrega(row: any, tipoFallback: TipoEntrega): Entrega {
   return {
     id: row.get("id"),
-    tipo: row.get("tipo"),
+    tipo: (row.get("tipo") || tipoFallback) as TipoEntrega,
     modal: row.get("modal") || null,
     numcar: row.get("numcar") || null,
     numnota: row.get("numnota") || null,
@@ -17,11 +17,11 @@ function linhaParaEntrega(row: any): Entrega {
     totpeso: row.get("totpeso") || null,
     placa: row.get("placa") || null,
     praca: row.get("praca") || null,
-    uf: row.get("uf") || null,
+    uf: null,
     data_prevista: row.get("data_prevista") || null,
     data_realizada: row.get("data_realizada") || null,
     status: (row.get("status") || "agendado") as StatusEntrega,
-    observacao: row.get("observacao") || null,
+    observacao: null,
     created_at: row.get("created_at") || "",
   };
 }
@@ -33,68 +33,61 @@ export interface FiltrosEntrega {
 }
 
 export async function listarEntregas(filtros: FiltrosEntrega = {}) {
-  const sheet = await getSheet("entregas");
-  const rows = await sheet.getRows();
-  let entregas = rows.map(linhaParaEntrega);
+  let entregas: Entrega[] = [];
 
-  if (filtros.tipo) entregas = entregas.filter((e) => e.tipo === filtros.tipo);
+  if (!filtros.tipo || filtros.tipo === "rodoviario") {
+    const sheetRodo = await getSheet("Rodoviario");
+    const rowsRodo = await sheetRodo.getRows();
+    entregas = entregas.concat(rowsRodo.map((r) => linhaParaEntrega(r, "rodoviario")));
+  }
+
+  if (!filtros.tipo || filtros.tipo === "fluvial") {
+    const sheetFluvial = await getSheet("Fluvial");
+    const rowsFluvial = await sheetFluvial.getRows();
+    entregas = entregas.concat(rowsFluvial.map((r) => linhaParaEntrega(r, "fluvial")));
+  }
+
   if (filtros.status) entregas = entregas.filter((e) => e.status === filtros.status);
   if (filtros.praca) entregas = entregas.filter((e) => e.praca === filtros.praca);
 
   return entregas;
 }
 
-export async function inserirEntregas(entregas: Partial<Entrega>[]) {
-  const sheet = await getSheet("entregas");
-  const agora = new Date().toISOString();
-
-  const linhas = entregas.map((e) => ({
-    id: crypto.randomUUID(),
-    tipo: e.tipo ?? "",
-    modal: e.modal ?? "",
-    numcar: e.numcar ?? "",
-    numnota: e.numnota ?? "",
-    numped: e.numped ?? "",
-    codcli: e.codcli ?? "",
-    cliente: e.cliente ?? "",
-    bairroent: e.bairroent ?? "",
-    municent: e.municent ?? "",
-    destino: e.destino ?? "",
-    totpeso: e.totpeso ?? "",
-    placa: e.placa ?? "",
-    praca: e.praca ?? "",
-    uf: e.uf ?? "",
-    data_prevista: e.data_prevista ?? "",
-    data_realizada: e.data_realizada ?? "",
-    status: e.status ?? "agendado",
-    observacao: e.observacao ?? "",
-    created_at: agora,
-  }));
-
-  await sheet.addRows(linhas);
-  return linhas.length;
-}
-
 export async function atualizarStatus(id: string, status: StatusEntrega, dataRealizada?: string) {
-  const sheet = await getSheet("entregas");
-  const rows = await sheet.getRows();
-  const row = rows.find((r) => r.get("id") === id);
-  if (!row) throw new Error("Entrega não encontrada");
+  const sheetRodo = await getSheet("Rodoviario");
+  const rowsRodo = await sheetRodo.getRows();
+  const rowRodo = rowsRodo.find((r) => r.get("id") === id);
 
-  row.set("status", status);
-  if (dataRealizada) row.set("data_realizada", dataRealizada);
-  await row.save();
+  if (rowRodo) {
+    rowRodo.set("status", status);
+    if (dataRealizada) rowRodo.set("data_realizada", dataRealizada);
+    await rowRodo.save();
+    return;
+  }
+
+  const sheetFluvial = await getSheet("Fluvial");
+  const rowsFluvial = await sheetFluvial.getRows();
+  const rowFluvial = rowsFluvial.find((r) => r.get("id") === id);
+
+  if (rowFluvial) {
+    rowFluvial.set("status", status);
+    if (dataRealizada) rowFluvial.set("data_realizada", dataRealizada);
+    await rowFluvial.save();
+    return;
+  }
+
+  throw new Error("Entrega não encontrada");
 }
 
 export async function resumoIndicadores() {
   const entregas = await listarEntregas();
 
   const total = entregas.length;
-  const entregues = entregas.filter((e) => e.status === "entregue").length;
-  const ocorrencias = entregas.filter((e) => e.status === "ocorrencia").length;
-  const naoEntregues = entregas.filter((e) => e.status === "nao_entregue").length;
-  const fluvial = entregas.filter((e) => e.tipo === "fluvial").length;
-  const rodoviario = entregas.filter((e) => e.tipo === "rodoviario").length;
+  const entregues = entregas.filter((d) => d.status === "entregue").length;
+  const ocorrencias = entregas.filter((d) => d.status === "ocorrencia").length;
+  const naoEntregues = entregas.filter((d) => d.status === "nao_entregue").length;
+  const fluvial = entregas.filter((d) => d.tipo === "fluvial").length;
+  const rodoviario = entregas.filter((d) => d.tipo === "rodoviario").length;
 
   return { total, entregues, ocorrencias, naoEntregues, fluvial, rodoviario };
 }
