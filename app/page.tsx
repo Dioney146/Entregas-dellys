@@ -197,13 +197,16 @@ export default function DashboardPage() {
   }, [entregasFiltradas, diasNoMes]);
 
   const dadosPorDestino = useMemo(() => {
-    const contagem = new Map<string, number>();
+    const contagem = new Map<string, { nome: string; valor: number }>();
     entregasFiltradas.forEach((x) => {
-      const destino = x.entrega.municent || x.entrega.destino || "Não informado";
-      contagem.set(destino, (contagem.get(destino) ?? 0) + 1);
+      const bruto = x.entrega.municent || x.entrega.destino || "Não informado";
+      const chave = normalizarTexto(bruto);
+      if (!contagem.has(chave)) {
+        contagem.set(chave, { nome: bruto.trim(), valor: 0 });
+      }
+      contagem.get(chave)!.valor += 1;
     });
-    return Array.from(contagem.entries())
-      .map(([nome, valor]) => ({ nome, valor }))
+    return Array.from(contagem.values())
       .sort((a, b) => b.valor - a.valor)
       .slice(0, 7);
   }, [entregasFiltradas]);
