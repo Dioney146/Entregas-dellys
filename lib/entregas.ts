@@ -16,12 +16,9 @@ function linhaParaEntrega(row: any, tipoFallback: TipoEntrega): Entrega {
     destino: row.get("destino") || null,
     totpeso: row.get("totpeso") || null,
     placa: row.get("placa") || null,
-    praca: row.get("praca") || null,
-    uf: null,
     data_prevista: row.get("data_prevista") || null,
     data_realizada: row.get("data_realizada") || null,
     status: (row.get("status") || "agendado") as StatusEntrega,
-    observacao: null,
     created_at: row.get("created_at") || "",
   };
 }
@@ -29,7 +26,6 @@ function linhaParaEntrega(row: any, tipoFallback: TipoEntrega): Entrega {
 export interface FiltrosEntrega {
   tipo?: TipoEntrega;
   status?: StatusEntrega;
-  praca?: string;
 }
 
 export async function listarEntregas(filtros: FiltrosEntrega = {}) {
@@ -48,7 +44,6 @@ export async function listarEntregas(filtros: FiltrosEntrega = {}) {
   }
 
   if (filtros.status) entregas = entregas.filter((e) => e.status === filtros.status);
-  if (filtros.praca) entregas = entregas.filter((e) => e.praca === filtros.praca);
 
   return entregas;
 }
