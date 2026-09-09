@@ -20,6 +20,11 @@ export interface Entrega {
   created_at: string;
 }
 
+export interface ProdutoFalta {
+  codigo: string;
+  quantidade: string;
+}
+
 export interface Ocorrencia {
   id: string;
   entrega_id: string;
@@ -31,4 +36,5 @@ export interface Ocorrencia {
   destino: string | null;
   obs: string | null;
   created_at: string;
+  produtos_falta: string | null;
 }
