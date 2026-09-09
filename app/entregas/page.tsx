@@ -10,6 +10,8 @@ import {
   Package,
   Clock,
   TriangleAlert,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { RodoviarioArt, FluvialArt } from "./illustrations";
 
@@ -35,6 +37,11 @@ interface StatusInfo {
   cor: string;
   bg: string;
   borda: string;
+}
+
+interface ProdutoFaltaLinha {
+  codigo: string;
+  quantidade: string;
 }
 
 const STATUS_LABEL: { [chave: string]: StatusInfo } = {
@@ -90,6 +97,9 @@ export default function EntregasPage() {
 
   const [modalEntrega, setModalEntrega] = useState<Entrega | null>(null);
   const [obs, setObs] = useState("");
+  const [produtosFalta, setProdutosFalta] = useState<ProdutoFaltaLinha[]>([
+    { codigo: "", quantidade: "" },
+  ]);
   const [enviandoOcorrencia, setEnviandoOcorrencia] = useState(false);
 
   async function carregar() {
@@ -166,6 +176,21 @@ export default function EntregasPage() {
   function abrirModalOcorrencia(entrega: Entrega) {
     setModalEntrega(entrega);
     setObs("");
+    setProdutosFalta([{ codigo: "", quantidade: "" }]);
+  }
+
+  function atualizarProduto(indice: number, campo: "codigo" | "quantidade", valor: string) {
+    setProdutosFalta((prev) =>
+      prev.map((p, i) => (i === indice ? { ...p, [campo]: valor } : p))
+    );
+  }
+
+  function adicionarProduto() {
+    setProdutosFalta((prev) => [...prev, { codigo: "", quantidade: "" }]);
+  }
+
+  function removerProduto(indice: number) {
+    setProdutosFalta((prev) => prev.filter((_, i) => i !== indice));
   }
 
   async function enviarOcorrencia() {
@@ -173,6 +198,12 @@ export default function EntregasPage() {
     setEnviandoOcorrencia(true);
     try {
       const dataRealizada = dataFormatada();
+
+      const produtosTexto = produtosFalta
+        .filter((p) => p.codigo.trim() !== "" || p.quantidade.trim() !== "")
+        .map((p) => `${p.codigo.trim()}:${p.quantidade.trim()}`)
+        .join(", ");
+
       const resp = await fetch("/api/ocorrencias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -186,6 +217,7 @@ export default function EntregasPage() {
           destino: modalEntrega.destino ?? modalEntrega.municent,
           obs,
           data_realizada: dataRealizada,
+          produtos_falta: produtosTexto,
         }),
       });
       const json = await resp.json();
@@ -426,7 +458,7 @@ export default function EntregasPage() {
 
       {modalEntrega && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="glass-surface rounded-2xl p-6 max-w-md w-full space-y-4" style={{ backgroundColor: "#101b29" }}>
+          <div className="glass-surface rounded-2xl p-6 max-w-lg w-full space-y-4 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: "#101b29" }}>
             <h3 className="text-lg font-semibold font-display">Registrar ocorrência</h3>
 
             <div className="text-sm text-[var(--text-muted)] space-y-1">
@@ -438,11 +470,49 @@ export default function EntregasPage() {
               <p><span className="text-[var(--text-primary)]">Destino:</span> {modalEntrega.destino ?? modalEntrega.municent ?? "-"}</p>
             </div>
 
+            <div>
+              <label className="block text-sm mb-2">Produtos em falta</label>
+              <div className="space-y-2">
+                {produtosFalta.map((p, idx) => (
+                  <div key={idx} className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Código do produto"
+                      value={p.codigo}
+                      onChange={(e) => atualizarProduto(idx, "codigo", e.target.value)}
+                      className="flex-1 bg-black/20 border border-[var(--border-subtle)] rounded-lg p-2 text-sm outline-none focus:border-[var(--status-ocorrencia)]"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Qtd"
+                      value={p.quantidade}
+                      onChange={(e) => atualizarProduto(idx, "quantidade", e.target.value)}
+                      className="w-20 bg-black/20 border border-[var(--border-subtle)] rounded-lg p-2 text-sm outline-none focus:border-[var(--status-ocorrencia)]"
+                    />
+                    <button
+                      onClick={() => removerProduto(idx)}
+                      disabled={produtosFalta.length === 1}
+                      className="text-[var(--status-nao-entregue)] disabled:opacity-30 px-2"
+                      title="Remover produto"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={adicionarProduto}
+                className="flex items-center gap-1 text-xs mt-2 text-[var(--accent-brand)] hover:underline"
+              >
+                <Plus size={14} /> Adicionar produto
+              </button>
+            </div>
+
             <label className="block text-sm">
               Observação da ocorrência
               <textarea
                 className="mt-1 w-full bg-black/20 border border-[var(--border-subtle)] rounded-lg p-2 text-sm outline-none focus:border-[var(--status-ocorrencia)]"
-                rows={4}
+                rows={3}
                 value={obs}
                 onChange={(e) => setObs(e.target.value)}
                 placeholder="Descreva o que aconteceu..."
