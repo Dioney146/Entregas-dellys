@@ -26,6 +26,7 @@ export async function registrarOcorrencia(dados: Partial<Ocorrencia>) {
     destino: dados.destino ?? "",
     obs: dados.obs ?? "",
     created_at: agora,
+    produtos_falta: dados.produtos_falta ?? "",
   };
 
   await sheet.addRow(linha);
