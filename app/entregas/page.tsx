@@ -204,6 +204,10 @@ export default function EntregasPage() {
         .map((p) => `${p.codigo.trim()}:${p.quantidade.trim()}`)
         .join(", ");
 
+      const obsCompleta = produtosTexto
+        ? `${obs ? obs + " | " : ""}Produtos em falta: ${produtosTexto}`
+        : obs;
+
       const resp = await fetch("/api/ocorrencias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -215,7 +219,7 @@ export default function EntregasPage() {
           codcli: modalEntrega.codcli,
           placa: modalEntrega.placa,
           destino: modalEntrega.destino ?? modalEntrega.municent,
-          obs,
+          obs: obsCompleta,
           data_realizada: dataRealizada,
           produtos_falta: produtosTexto,
         }),
