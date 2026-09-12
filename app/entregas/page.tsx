@@ -12,6 +12,7 @@ import {
   TriangleAlert,
   Plus,
   Trash2,
+  MapPin,
 } from "lucide-react";
 import { RodoviarioArt, FluvialArt } from "./illustrations";
 
@@ -71,6 +72,29 @@ const STATUS_LABEL: { [chave: string]: StatusInfo } = {
   },
 };
 
+function normalizarTexto(txt: string): string {
+  return txt
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+}
+
+const GRUPOS_MUNICIPIOS: { principal: string; aliases: string[] }[] = [
+  { principal: "Manacapuru", aliases: ["MANACAPURU", "IRANDUBA", "NOVO AIRAO"] },
+  { principal: "Presidente Figueiredo", aliases: ["PRESIDENTE FIGUEIREDO"] },
+  { principal: "Autazes", aliases: ["AUTAZES", "CAREIRO DA VARZEA", "CAREIRO", "MANAQUIRI"] },
+  { principal: "Silves", aliases: ["SILVES", "ITAPIRANGA"] },
+  { principal: "Itacoatiara", aliases: ["ITACOATIARA", "RIO PRETO DA EVA", "NOVO REMANSO"] },
+];
+
+function resolverMunicipio(nomeBruto: string): string {
+  const normalizado = normalizarTexto(nomeBruto);
+  const grupo = GRUPOS_MUNICIPIOS.find((g) => g.aliases.includes(normalizado));
+  if (grupo) return grupo.principal;
+  return nomeBruto.trim();
+}
+
 function dataFormatada(): string {
   const agora = new Date();
   const dia = String(agora.getDate()).padStart(2, "0");
@@ -92,6 +116,7 @@ export default function EntregasPage() {
   const [salvandoId, setSalvandoId] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [filtroStatus, setFiltroStatus] = useState<string>("agendado");
+  const [filtroCidade, setFiltroCidade] = useState<string>("");
   const [busca, setBusca] = useState("");
   const [modalidade, setModalidade] = useState<ModalidadeFiltro>("rodoviario");
 
@@ -127,23 +152,31 @@ export default function EntregasPage() {
     return entregas.filter((e) => e.tipo === modalidade);
   }, [entregas, modalidade]);
 
+  const entregasPorCidade = useMemo(() => {
+    if (modalidade !== "rodoviario" || !filtroCidade) return entregasPorModalidade;
+    return entregasPorModalidade.filter((e) => {
+      const bruto = e.municent || e.destino || "";
+      return resolverMunicipio(bruto) === filtroCidade;
+    });
+  }, [entregasPorModalidade, filtroCidade, modalidade]);
+
   const entregasFiltradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
-    if (!termo) return entregasPorModalidade;
+    if (!termo) return entregasPorCidade;
 
-    return entregasPorModalidade.filter((e) => {
+    return entregasPorCidade.filter((e) => {
       const campos = [e.cliente, e.numnota, e.numcar, e.placa, e.destino, e.municent, e.codcli];
       return campos.some((campo) => (campo ?? "").toLowerCase().includes(termo));
     });
-  }, [entregasPorModalidade, busca]);
+  }, [entregasPorCidade, busca]);
 
   const indicadores = useMemo(() => {
-    const total = entregasPorModalidade.length;
-    const entregues = entregasPorModalidade.filter((e) => e.status === "entregue").length;
-    const pendentes = entregasPorModalidade.filter((e) => e.status === "agendado").length;
-    const ocorrencias = entregasPorModalidade.filter((e) => e.status === "ocorrencia").length;
+    const total = entregasPorCidade.length;
+    const entregues = entregasPorCidade.filter((e) => e.status === "entregue").length;
+    const pendentes = entregasPorCidade.filter((e) => e.status === "agendado").length;
+    const ocorrencias = entregasPorCidade.filter((e) => e.status === "ocorrencia").length;
     return { total, entregues, pendentes, ocorrencias };
-  }, [entregasPorModalidade]);
+  }, [entregasPorCidade]);
 
   const totalRodoviario = entregas.filter((e) => e.tipo === "rodoviario").length;
   const totalFluvial = entregas.filter((e) => e.tipo === "fluvial").length;
@@ -262,7 +295,9 @@ export default function EntregasPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button
-          onClick={() => setModalidade(tileRodoviario.valor)}
+          onClick={() => {
+            setModalidade(tileRodoviario.valor);
+          }}
           className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
           style={{
             borderColor: modalidade === "rodoviario" ? tileRodoviario.accent : "var(--border-subtle)",
@@ -289,7 +324,10 @@ export default function EntregasPage() {
         </button>
 
         <button
-          onClick={() => setModalidade(tileFluvial.valor)}
+          onClick={() => {
+            setModalidade(tileFluvial.valor);
+            setFiltroCidade("");
+          }}
           className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
           style={{
             borderColor: modalidade === "fluvial" ? tileFluvial.accent : "var(--border-subtle)",
@@ -374,6 +412,23 @@ export default function EntregasPage() {
             <option value="nao_entregue" className="bg-slate-900">Não entregue</option>
           </select>
         </div>
+        {modalidade === "rodoviario" && (
+          <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-2">
+            <MapPin size={16} className="text-[var(--text-muted)]" />
+            <select
+              className="bg-transparent outline-none text-sm"
+              value={filtroCidade}
+              onChange={(e) => setFiltroCidade(e.target.value)}
+            >
+              <option value="" className="bg-slate-900">Todas as cidades</option>
+              {GRUPOS_MUNICIPIOS.map((g) => (
+                <option key={g.principal} value={g.principal} className="bg-slate-900">
+                  {g.principal}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {carregando ? (
