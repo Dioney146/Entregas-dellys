@@ -3,24 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --bg-void: #0a121c;
-  --bg-surface: #101b29;
-  --border-subtle: #223247;
-  --text-primary: #e8eef4;
-  --text-muted: #7e92a6;
+  --bg-void: #f3f5f8;
+  --bg-surface: #ffffff;
+  --border-subtle: #dde3ea;
+  --text-primary: #111827;
+  --text-muted: #6b7280;
 
-  --accent-brand: #2dd9a8;
-  --accent-brand-soft: rgba(45, 217, 168, 0.15);
+  --accent-brand: #0f9d70;
+  --accent-brand-soft: rgba(15, 157, 112, 0.12);
 
-  --accent-rodo: #c98a3b;
-  --accent-rodo-soft: rgba(201, 138, 59, 0.15);
-  --accent-fluvial: #2fb8c6;
-  --accent-fluvial-soft: rgba(47, 184, 198, 0.15);
+  --accent-rodo: #b3781e;
+  --accent-rodo-soft: rgba(179, 120, 30, 0.12);
+  --accent-fluvial: #0d7f8f;
+  --accent-fluvial-soft: rgba(13, 127, 143, 0.12);
 
-  --status-entregue: #34d399;
-  --status-agendado: #64748b;
-  --status-ocorrencia: #f5a524;
-  --status-nao-entregue: #f0526b;
+  --status-entregue: #0f9d58;
+  --status-agendado: #6b7280;
+  --status-ocorrencia: #b7791f;
+  --status-nao-entregue: #d13b3b;
 }
 
 body {
@@ -42,8 +42,8 @@ h3,
 }
 
 .glass-surface {
-  background: rgba(16, 27, 41, 0.7);
+  background: rgba(255, 255, 255, 0.85);
   border: 1px solid var(--border-subtle);
   backdrop-filter: blur(6px);
-  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 16px -8px rgba(17, 24, 39, 0.08);
 }
