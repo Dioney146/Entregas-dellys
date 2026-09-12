@@ -21,6 +21,10 @@
   --status-agendado: #6b7280;
   --status-ocorrencia: #b7791f;
   --status-nao-entregue: #d13b3b;
+
+  --sidebar-bg: #0e1a2b;
+  --sidebar-text: #a8b8cc;
+  --sidebar-active-bg: rgba(15, 157, 112, 0.15);
 }
 
 body {
