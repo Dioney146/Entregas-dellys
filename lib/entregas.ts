@@ -48,13 +48,19 @@ export async function listarEntregas(filtros: FiltrosEntrega = {}) {
 }
 
 function formatarDataHoraBr(d: Date): string {
-  const dia = String(d.getDate()).padStart(2, "0");
-  const mes = String(d.getMonth() + 1).padStart(2, "0");
-  const ano = d.getFullYear();
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  const ss = String(d.getSeconds()).padStart(2, "0");
-  return `${dia}/${mes}/${ano} ${hh}:${mm}:${ss}`;
+  const formatter = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Manaus",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  const partes = formatter.formatToParts(d);
+  const obter = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? "";
+  return `${obter("day")}/${obter("month")}/${obter("year")} ${obter("hour")}:${obter("minute")}:${obter("second")}`;
 }
 
 async function arquivarLinha(row: any, tipoFallback: TipoEntrega) {
