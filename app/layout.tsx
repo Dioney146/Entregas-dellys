@@ -1,8 +1,9 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import Link from "next/link";
-import Image from "next/image";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import Sidebar from "./components/sidebar";
+
+export const dynamic = "force-dynamic";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -30,26 +31,47 @@ export const metadata: Metadata = {
   },
 };
 
+const DIAS_SEMANA = [
+  "Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira",
+  "Quinta-feira", "Sexta-feira", "Sábado",
+];
+
+const MESES = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+];
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const hoje = new Date();
+  const dataFormatada = `${DIAS_SEMANA[hoje.getDay()]}, ${hoje.getDate()} de ${MESES[hoje.getMonth()]} de ${hoje.getFullYear()}`;
+
   return (
     <html lang="pt-BR" className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <body>
-        <div className="min-h-screen flex flex-col">
-          <header className="border-b border-slate-700/60 px-6 py-4 flex items-center justify-between backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              <Image src="/logo.webp" alt="Delly's" width={36} height={36} className="object-contain" />
-              <h1 className="text-lg font-semibold font-display tracking-tight">
-                Controle de Entregas — Delly&apos;s
-              </h1>
-            </div>
-            <nav className="flex gap-5 text-sm text-slate-300">
-              <Link href="/" className="hover:text-white transition-colors">Dashboard</Link>
-              <Link href="/entregas" className="hover:text-white transition-colors">Entregas</Link>
-              <Link href="/cronograma" className="hover:text-white transition-colors">Cronograma</Link>
-              <Link href="/arquivo" className="hover:text-white transition-colors">Arquivo</Link>
-            </nav>
-          </header>
-          <main className="flex-1 p-6">{children}</main>
+        <div className="min-h-screen flex" style={{ backgroundColor: "var(--bg-void)" }}>
+          <Sidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            <header
+              className="h-16 flex items-center justify-end gap-4 px-6 border-b"
+              style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
+            >
+              <span className="text-sm" style={{ color: "var(--text-muted)" }}>
+                {dataFormatada}
+              </span>
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+                  style={{ backgroundColor: "var(--accent-brand)" }}
+                >
+                  DH
+                </div>
+                <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                  Delly&apos;s Operacional
+                </span>
+              </div>
+            </header>
+            <main className="flex-1 p-6">{children}</main>
+          </div>
         </div>
       </body>
     </html>
