@@ -21,8 +21,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  BarChart,
-  Bar,
 } from "recharts";
 
 interface Entrega {
@@ -44,10 +42,11 @@ type ModalidadeFiltro = "todos" | "rodoviario" | "fluvial";
 
 interface CarregamentoInfo {
   carregamento: string;
-  Entregue: number;
-  Ocorrencia: number;
-  NaoEntregue: number;
-  Agendado: number;
+  tipo: string;
+  entregue: number;
+  ocorrencia: number;
+  naoEntregue: number;
+  agendado: number;
   total: number;
 }
 
@@ -103,11 +102,11 @@ function CardKpi({
 }) {
   return (
     <div className="glass-surface rounded-2xl p-5">
-      <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+      <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
         <Icone size={15} style={{ color: cor }} />
         {label}
       </div>
-      <p className="text-3xl font-bold font-mono-data mt-2 text-[var(--text-primary)]">{valor}</p>
+      <p className="text-3xl font-bold font-mono-data mt-2" style={{ color: "var(--text-primary)" }}>{valor}</p>
     </div>
   );
 }
@@ -117,9 +116,9 @@ function TooltipEscuro({ active, payload, label }: any) {
   return (
     <div
       className="rounded-lg p-2 text-xs"
-      style={{ backgroundColor: "#101b29", border: "1px solid var(--border-subtle)" }}
+      style={{ backgroundColor: "#0e1a2b", border: "1px solid var(--border-subtle)" }}
     >
-      <p className="text-[var(--text-muted)] mb-1">{label}</p>
+      <p className="mb-1" style={{ color: "#a8b8cc" }}>{label}</p>
       {payload.map((p: any, idx: number) => (
         <p key={idx} style={{ color: p.color || p.fill }}>
           {p.name}: {p.value}
@@ -235,47 +234,54 @@ export default function DashboardPage() {
       if (!mapa.has(numcar)) {
         mapa.set(numcar, {
           carregamento: numcar,
-          Entregue: 0,
-          Ocorrencia: 0,
-          NaoEntregue: 0,
-          Agendado: 0,
+          tipo: x.entrega.tipo,
+          entregue: 0,
+          ocorrencia: 0,
+          naoEntregue: 0,
+          agendado: 0,
           total: 0,
         });
       }
       const registro = mapa.get(numcar)!;
       registro.total += 1;
-      if (x.entrega.status === "entregue") registro.Entregue += 1;
-      else if (x.entrega.status === "ocorrencia") registro.Ocorrencia += 1;
-      else if (x.entrega.status === "nao_entregue") registro.NaoEntregue += 1;
-      else registro.Agendado += 1;
+      if (x.entrega.status === "entregue") registro.entregue += 1;
+      else if (x.entrega.status === "ocorrencia") registro.ocorrencia += 1;
+      else if (x.entrega.status === "nao_entregue") registro.naoEntregue += 1;
+      else registro.agendado += 1;
     });
 
     return Array.from(mapa.values())
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 7);
+      .sort((a, b) => {
+        if (a.tipo !== b.tipo) return a.tipo === "rodoviario" ? -1 : 1;
+        return b.total - a.total;
+      })
+      .slice(0, 10);
   }, [entregasFiltradas]);
 
   const maxDestino = Math.max(1, ...dadosPorDestino.map((d) => d.valor));
+  const maxCarregamento = Math.max(1, ...dadosPorCarregamento.map((c) => c.total));
 
   return (
     <div className="space-y-6 w-full">
       <div className="glass-surface rounded-2xl p-4 flex flex-wrap items-center gap-3">
         <select
-          className="bg-black/20 rounded-lg px-3 py-2 text-sm outline-none"
+          className="rounded-lg px-3 py-2 text-sm outline-none border"
+          style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
           value={mes}
           onChange={(e) => setMes(Number(e.target.value))}
         >
           {MESES.map((nome, idx) => (
-            <option key={nome} value={idx + 1} className="bg-slate-900">{nome}</option>
+            <option key={nome} value={idx + 1}>{nome}</option>
           ))}
         </select>
         <select
-          className="bg-black/20 rounded-lg px-3 py-2 text-sm outline-none"
+          className="rounded-lg px-3 py-2 text-sm outline-none border"
+          style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
           value={ano}
           onChange={(e) => setAno(Number(e.target.value))}
         >
           {[hoje.getFullYear() - 1, hoje.getFullYear(), hoje.getFullYear() + 1].map((a) => (
-            <option key={a} value={a} className="bg-slate-900">{a}</option>
+            <option key={a} value={a}>{a}</option>
           ))}
         </select>
 
@@ -285,7 +291,7 @@ export default function DashboardPage() {
             className="text-xs rounded-lg px-3 py-1.5 border transition-colors"
             style={{
               borderColor: modalidade === "todos" ? "var(--text-muted)" : "var(--border-subtle)",
-              backgroundColor: modalidade === "todos" ? "rgba(126,146,166,0.15)" : "transparent",
+              backgroundColor: modalidade === "todos" ? "rgba(107,114,128,0.12)" : "transparent",
               color: modalidade === "todos" ? "var(--text-primary)" : "var(--text-muted)",
             }}
           >
@@ -317,7 +323,7 @@ export default function DashboardPage() {
       </div>
 
       {erro && (
-        <div className="bg-red-900/40 border border-red-700 text-red-200 text-sm rounded-lg p-3">
+        <div className="bg-red-100 border border-red-300 text-red-700 text-sm rounded-lg p-3">
           {erro}
         </div>
       )}
@@ -335,7 +341,7 @@ export default function DashboardPage() {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(90deg, rgba(10,18,28,0.9) 0%, rgba(10,18,28,0.55) 45%, rgba(10,18,28,0.15) 100%)",
+              "linear-gradient(90deg, rgba(14,26,43,0.92) 0%, rgba(14,26,43,0.6) 45%, rgba(14,26,43,0.15) 100%)",
           }}
         />
         <div className="relative h-full flex items-center px-6">
@@ -343,7 +349,7 @@ export default function DashboardPage() {
             <p className="text-xs uppercase tracking-widest" style={{ color: "var(--accent-brand)" }}>
               Delly&apos;s Food Service
             </p>
-            <p className="text-lg sm:text-xl font-semibold font-display mt-1">
+            <p className="text-lg sm:text-xl font-semibold font-display mt-1 text-white">
               Operação logística em tempo real
             </p>
           </div>
@@ -362,7 +368,7 @@ export default function DashboardPage() {
         <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="glass-surface rounded-2xl p-5 lg:col-span-2">
-              <p className="text-sm font-medium mb-4 text-[var(--text-muted)]">Entregas por dia</p>
+              <p className="text-sm font-medium mb-4" style={{ color: "var(--text-muted)" }}>Entregas por dia</p>
               <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={dadosPorDia}>
                   <defs>
@@ -376,8 +382,8 @@ export default function DashboardPage() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
-                  <XAxis dataKey="dia" tick={{ fill: "#7e92a6", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "#7e92a6", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <XAxis dataKey="dia" tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip content={<TooltipEscuro />} />
                   {modalidade !== "fluvial" && (
                     <Area type="monotone" dataKey="Rodoviário" stroke="var(--accent-rodo)" fill="url(#corRodo)" strokeWidth={2} />
@@ -390,7 +396,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="glass-surface rounded-2xl p-5 flex flex-col">
-              <p className="text-sm font-medium mb-4 text-[var(--text-muted)]">Status das entregas</p>
+              <p className="text-sm font-medium mb-4" style={{ color: "var(--text-muted)" }}>Status das entregas</p>
               <ResponsiveContainer width="100%" height={190}>
                 <PieChart>
                   <Pie
@@ -411,11 +417,11 @@ export default function DashboardPage() {
               <div className="space-y-1.5 mt-3">
                 {dadosStatus.map((d, idx) => (
                   <div key={idx} className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                    <span className="flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.cor }} />
                       {d.nome}
                     </span>
-                    <span className="font-mono-data">{d.valor} ({d.percentual}%)</span>
+                    <span className="font-mono-data" style={{ color: "var(--text-primary)" }}>{d.valor} ({d.percentual}%)</span>
                   </div>
                 ))}
               </div>
@@ -424,12 +430,12 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="glass-surface rounded-2xl p-5">
-              <p className="text-sm font-medium mb-4 text-[var(--text-muted)]">Entregas por destino</p>
+              <p className="text-sm font-medium mb-4" style={{ color: "var(--text-muted)" }}>Entregas por destino</p>
               <div className="space-y-3">
                 {dadosPorDestino.map((d, idx) => (
                   <div key={idx} className="flex items-center gap-3">
-                    <span className="text-xs text-[var(--text-muted)] w-32 truncate">{d.nome}</span>
-                    <div className="flex-1 bg-black/20 rounded-full h-3 overflow-hidden">
+                    <span className="text-xs w-32 truncate" style={{ color: "var(--text-muted)" }}>{d.nome}</span>
+                    <div className="flex-1 rounded-full h-3 overflow-hidden" style={{ backgroundColor: "var(--border-subtle)" }}>
                       <div
                         className="h-full rounded-full"
                         style={{
@@ -438,36 +444,71 @@ export default function DashboardPage() {
                         }}
                       />
                     </div>
-                    <span className="text-xs font-mono-data w-8 text-right">{d.valor}</span>
+                    <span className="text-xs font-mono-data w-8 text-right" style={{ color: "var(--text-primary)" }}>{d.valor}</span>
                   </div>
                 ))}
                 {dadosPorDestino.length === 0 && (
-                  <p className="text-sm text-[var(--text-muted)]">Sem dados no período.</p>
+                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>Sem dados no período.</p>
                 )}
               </div>
             </div>
 
             <div className="glass-surface rounded-2xl p-5">
-              <p className="text-sm font-medium mb-4 text-[var(--text-muted)]">Entregas por carregamento</p>
-              <ResponsiveContainer width="100%" height={Math.max(180, dadosPorCarregamento.length * 36)}>
-                <BarChart data={dadosPorCarregamento} layout="vertical" margin={{ left: 0 }}>
-                  <XAxis type="number" hide allowDecimals={false} />
-                  <YAxis
-                    type="category"
-                    dataKey="carregamento"
-                    tick={{ fill: "#e8eef4", fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={80}
-                  />
-                  <Tooltip content={<TooltipEscuro />} />
-                  <Bar dataKey="Entregue" stackId="a" fill="var(--status-entregue)" />
-                  <Bar dataKey="Ocorrencia" stackId="a" fill="var(--status-ocorrencia)" />
-                  <Bar dataKey="NaoEntregue" stackId="a" fill="var(--status-nao-entregue)" />
-                  <Bar dataKey="Agendado" stackId="a" fill="var(--status-agendado)" radius={[0, 6, 6, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-3 mt-2 text-xs text-[var(--text-muted)]">
+              <p className="text-sm font-medium mb-4" style={{ color: "var(--text-muted)" }}>Entregas por carregamento</p>
+              <div className="space-y-3">
+                {dadosPorCarregamento.map((c, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <span
+                      className="flex items-center gap-1.5 text-xs w-28 shrink-0"
+                      style={{ color: c.tipo === "fluvial" ? "var(--accent-fluvial)" : "var(--accent-rodo)" }}
+                      title={c.tipo === "fluvial" ? "Fluvial" : "Rodoviário"}
+                    >
+                      {c.tipo === "fluvial" ? <Ship size={13} /> : <Truck size={13} />}
+                      <span className="font-mono-data truncate">{c.carregamento}</span>
+                    </span>
+                    <div className="flex-1 h-3 rounded-full overflow-hidden flex" style={{ backgroundColor: "var(--border-subtle)" }}>
+                      {c.entregue > 0 && (
+                        <div
+                          style={{
+                            width: `${(c.entregue / maxCarregamento) * 100}%`,
+                            backgroundColor: "var(--status-entregue)",
+                          }}
+                        />
+                      )}
+                      {c.ocorrencia > 0 && (
+                        <div
+                          style={{
+                            width: `${(c.ocorrencia / maxCarregamento) * 100}%`,
+                            backgroundColor: "var(--status-ocorrencia)",
+                          }}
+                        />
+                      )}
+                      {c.naoEntregue > 0 && (
+                        <div
+                          style={{
+                            width: `${(c.naoEntregue / maxCarregamento) * 100}%`,
+                            backgroundColor: "var(--status-nao-entregue)",
+                          }}
+                        />
+                      )}
+                      {c.agendado > 0 && (
+                        <div
+                          style={{
+                            width: `${(c.agendado / maxCarregamento) * 100}%`,
+                            backgroundColor: "var(--status-agendado)",
+                          }}
+                        />
+                      )}
+                    </div>
+                    <span className="text-xs font-mono-data w-8 text-right" style={{ color: "var(--text-primary)" }}>{c.total}</span>
+                  </div>
+                ))}
+                {dadosPorCarregamento.length === 0 && (
+                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>Sem dados no período.</p>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t text-xs" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--status-entregue)" }} /> Entregue
                 </span>
@@ -481,15 +522,12 @@ export default function DashboardPage() {
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--status-agendado)" }} /> Agendado
                 </span>
               </div>
-              {dadosPorCarregamento.length === 0 && (
-                <p className="text-sm text-[var(--text-muted)] mt-2">Sem dados no período.</p>
-              )}
             </div>
           </div>
         </>
       )}
 
-      {carregando && <p className="text-[var(--text-muted)] text-sm">Carregando...</p>}
+      {carregando && <p className="text-sm" style={{ color: "var(--text-muted)" }}>Carregando...</p>}
     </div>
   );
 }
