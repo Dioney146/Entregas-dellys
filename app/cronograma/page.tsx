@@ -190,10 +190,10 @@ export default function CronogramaPage() {
   return (
     <div className="space-y-6 w-full">
       <div>
-        <h2 className="text-2xl font-semibold font-display tracking-tight">
+        <h2 className="text-2xl font-semibold font-display tracking-tight" style={{ color: "var(--text-primary)" }}>
           Cronograma Anual de Entregas
         </h2>
-        <p className="text-sm text-[var(--text-muted)] mt-1">
+        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
           Visão por município (rodoviário) ou modal (fluvial) e dia.
         </p>
       </div>
@@ -201,26 +201,28 @@ export default function CronogramaPage() {
       <div className="glass-surface rounded-2xl p-4 space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <select
-            className="bg-black/20 rounded-lg px-3 py-2 text-sm outline-none"
+            className="rounded-lg px-3 py-2 text-sm outline-none border"
+            style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
             value={ano}
             onChange={(e) => setAno(Number(e.target.value))}
           >
             {[hoje.getFullYear() - 1, hoje.getFullYear(), hoje.getFullYear() + 1].map((a) => (
-              <option key={a} value={a} className="bg-slate-900">{a}</option>
+              <option key={a} value={a}>{a}</option>
             ))}
           </select>
 
           <select
-            className="bg-black/20 rounded-lg px-3 py-2 text-sm outline-none"
+            className="rounded-lg px-3 py-2 text-sm outline-none border"
+            style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
             value={mes}
             onChange={(e) => setMes(Number(e.target.value))}
           >
             {MESES.map((nome, idx) => (
-              <option key={nome} value={idx + 1} className="bg-slate-900">{nome}</option>
+              <option key={nome} value={idx + 1}>{nome}</option>
             ))}
           </select>
 
-          <span className="text-sm text-[var(--text-muted)]">
+          <span className="text-sm" style={{ color: "var(--text-muted)" }}>
             {MESES[mes - 1]} de {ano} · {diasNoMes} dias
           </span>
 
@@ -230,7 +232,7 @@ export default function CronogramaPage() {
               className="flex items-center gap-1.5 text-xs rounded-lg px-3 py-1.5 border transition-colors"
               style={{
                 borderColor: modalidade === "todos" ? "var(--text-muted)" : "var(--border-subtle)",
-                backgroundColor: modalidade === "todos" ? "rgba(126,146,166,0.15)" : "transparent",
+                backgroundColor: modalidade === "todos" ? "rgba(107,114,128,0.12)" : "transparent",
                 color: modalidade === "todos" ? "var(--text-primary)" : "var(--text-muted)",
               }}
             >
@@ -264,33 +266,33 @@ export default function CronogramaPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="glass-surface rounded-xl p-3">
-          <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs">
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
             <Package size={14} /> Total no ano
           </div>
-          <p className="text-xl font-semibold font-mono-data mt-1">{totalNoAno}</p>
+          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{totalNoAno}</p>
         </div>
         <div className="glass-surface rounded-xl p-3">
-          <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs">
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
             <Package size={14} /> Cargas no mês
           </div>
-          <p className="text-xl font-semibold font-mono-data mt-1">{cargasNoMes}</p>
+          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{cargasNoMes}</p>
         </div>
         <div className="glass-surface rounded-xl p-3">
           <div className="flex items-center gap-2 text-xs" style={{ color: "var(--status-entregue)" }}>
             <CheckCircle2 size={14} /> Entregues
           </div>
-          <p className="text-xl font-semibold font-mono-data mt-1">{entreguesNoMes}</p>
+          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{entreguesNoMes}</p>
         </div>
         <div className="glass-surface rounded-xl p-3">
-          <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs">
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
             <MapPin size={14} /> Municípios/Modais ativos
           </div>
-          <p className="text-xl font-semibold font-mono-data mt-1">{linhasAtivas}</p>
+          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{linhasAtivas}</p>
         </div>
       </div>
 
       <div className="glass-surface rounded-2xl p-4">
-        <p className="text-xs text-[var(--text-muted)] mb-3">Entregas por mês em {ano}</p>
+        <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>Entregas por mês em {ano}</p>
         <div className="flex items-end gap-2 h-24">
           {contagemPorMes.map((c, idx) => {
             const total = c.rodo + c.fluvial;
@@ -308,6 +310,7 @@ export default function CronogramaPage() {
                   className="w-full flex flex-col justify-end rounded-t-sm overflow-hidden"
                   style={{
                     height: "64px",
+                    backgroundColor: "var(--border-subtle)",
                     opacity: ativo ? 1 : 0.55,
                     outline: ativo ? "1px solid var(--text-muted)" : "none",
                   }}
@@ -315,7 +318,7 @@ export default function CronogramaPage() {
                   <div style={{ height: `${alturaFluvial}%`, backgroundColor: "var(--accent-fluvial)" }} />
                   <div style={{ height: `${alturaRodo}%`, backgroundColor: "var(--accent-rodo)" }} />
                 </div>
-                <span className="text-[10px] text-[var(--text-muted)] group-hover:text-[var(--text-primary)]">
+                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
                   {MESES_ABREV[idx]}
                 </span>
               </button>
@@ -325,21 +328,26 @@ export default function CronogramaPage() {
       </div>
 
       {erro && (
-        <div className="bg-red-900/40 border border-red-700 text-red-200 text-sm rounded-lg p-3">
+        <div className="bg-red-100 border border-red-300 text-red-700 text-sm rounded-lg p-3">
           {erro}
         </div>
       )}
 
       {carregando ? (
-        <p className="text-[var(--text-muted)] text-sm">Carregando...</p>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Carregando...</p>
       ) : (
         <div className="glass-surface rounded-2xl overflow-auto max-h-[70vh]">
           <table className="border-collapse text-sm w-full">
             <thead>
               <tr>
                 <th
-                  className="sticky top-0 left-0 z-20 bg-[#101b29] p-2 text-left font-medium text-[var(--text-muted)] border-b border-r border-[var(--border-subtle)]"
-                  style={{ minWidth: "130px" }}
+                  className="sticky top-0 left-0 z-20 p-2 text-left font-medium border-b border-r"
+                  style={{
+                    minWidth: "130px",
+                    backgroundColor: "var(--bg-surface)",
+                    borderColor: "var(--border-subtle)",
+                    color: "var(--text-muted)",
+                  }}
                 >
                   Município / Modal
                 </th>
@@ -349,15 +357,16 @@ export default function CronogramaPage() {
                   return (
                     <th
                       key={dia}
-                      className="sticky top-0 z-10 p-1 text-center font-medium border-b border-[var(--border-subtle)]"
+                      className="sticky top-0 z-10 p-1 text-center font-medium border-b"
                       style={{
                         minWidth: "38px",
-                        backgroundColor: fimDeSemana ? "rgba(126,146,166,0.10)" : "#101b29",
+                        backgroundColor: fimDeSemana ? "rgba(107,114,128,0.08)" : "var(--bg-surface)",
+                        borderColor: "var(--border-subtle)",
                         color: fimDeSemana ? "var(--text-muted)" : "var(--text-primary)",
                       }}
                     >
                       <div className="text-xs font-semibold font-mono-data">{dia}</div>
-                      <div className="text-[8px] text-[var(--text-muted)]">{DIAS_SEMANA[diaSemana]}</div>
+                      <div className="text-[8px]" style={{ color: "var(--text-muted)" }}>{DIAS_SEMANA[diaSemana]}</div>
                     </th>
                   );
                 })}
@@ -365,10 +374,15 @@ export default function CronogramaPage() {
             </thead>
             <tbody>
               {linhas.map((linha, idxLinha) => (
-                <tr key={idxLinha} className="hover:bg-white/[0.02]">
+                <tr key={idxLinha} className="hover:bg-black/[0.02]">
                   <td
-                    className="sticky left-0 z-10 bg-[#101b29] p-2 border-r border-b border-[var(--border-subtle)] font-medium text-sm"
-                    style={{ minWidth: "130px" }}
+                    className="sticky left-0 z-10 p-2 border-r border-b font-medium text-sm"
+                    style={{
+                      minWidth: "130px",
+                      backgroundColor: "var(--bg-surface)",
+                      borderColor: "var(--border-subtle)",
+                      color: "var(--text-primary)",
+                    }}
                   >
                     {linha.linha}
                   </td>
@@ -383,17 +397,18 @@ export default function CronogramaPage() {
                     return (
                       <td
                         key={dia}
-                        className="p-0.5 text-center border-b border-[var(--border-subtle)] cursor-pointer align-middle"
+                        className="p-0.5 text-center border-b cursor-pointer align-middle"
                         style={{
+                          borderColor: "var(--border-subtle)",
                           backgroundColor:
                             lista.length > 0
                               ? temRodo && temFluvial
-                                ? "rgba(201,138,59,0.18)"
+                                ? "rgba(179,120,30,0.15)"
                                 : temRodo
                                 ? "var(--accent-rodo-soft)"
                                 : "var(--accent-fluvial-soft)"
                               : fimDeSemana
-                              ? "rgba(126,146,166,0.05)"
+                              ? "rgba(107,114,128,0.05)"
                               : "transparent",
                         }}
                         title={lista.length > 0 ? tooltipCelula(lista) : undefined}
@@ -422,7 +437,7 @@ export default function CronogramaPage() {
                                 />
                               )}
                             </div>
-                            <span className="text-[9px] font-mono-data leading-tight break-all">
+                            <span className="text-[9px] font-mono-data leading-tight break-all" style={{ color: "var(--text-primary)" }}>
                               {placas.length > 0 ? placas.join(" ") : lista.length}
                             </span>
                           </div>
@@ -436,7 +451,8 @@ export default function CronogramaPage() {
                 <tr>
                   <td
                     colSpan={diasNoMes + 1}
-                    className="p-8 text-center text-[var(--text-muted)]"
+                    className="p-8 text-center"
+                    style={{ color: "var(--text-muted)" }}
                   >
                     Nenhuma entrega encontrada para {MESES[mes - 1]} de {ano}.
                   </td>
@@ -448,25 +464,25 @@ export default function CronogramaPage() {
       )}
 
       {celulaSelecionada && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
           <div
             className="glass-surface rounded-2xl p-6 max-w-lg w-full space-y-4"
-            style={{ backgroundColor: "#101b29" }}
+            style={{ backgroundColor: "var(--bg-surface)" }}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold font-display">
+              <h3 className="text-lg font-semibold font-display" style={{ color: "var(--text-primary)" }}>
                 {celulaSelecionada.linha} · dia {celulaSelecionada.dia}
               </h3>
-              <button onClick={() => setCelulaSelecionada(null)} className="text-[var(--text-muted)] hover:text-white">
+              <button onClick={() => setCelulaSelecionada(null)} style={{ color: "var(--text-muted)" }}>
                 <X size={18} />
               </button>
             </div>
 
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {celulaSelecionada.entregas.map((e) => (
-                <div key={e.id} className="bg-black/20 rounded-lg p-3 text-sm space-y-1">
+                <div key={e.id} className="rounded-lg p-3 text-sm space-y-1" style={{ backgroundColor: "rgba(107,114,128,0.06)" }}>
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">{e.cliente ?? "-"}</span>
+                    <span className="font-medium" style={{ color: "var(--text-primary)" }}>{e.cliente ?? "-"}</span>
                     <span
                       className="text-xs px-2 py-0.5 rounded-full"
                       style={{
@@ -477,10 +493,10 @@ export default function CronogramaPage() {
                       {e.tipo}{e.modal ? ` (${e.modal})` : ""}
                     </span>
                   </div>
-                  <p className="text-[var(--text-muted)]">Nota: {e.numnota ?? "-"} · Carregamento: {e.numcar ?? "-"}</p>
-                  <p className="text-[var(--text-muted)]">Placa: {e.placa ?? "-"}</p>
-                  <p className="text-[var(--text-muted)]">Destino: {e.destino ?? "-"}</p>
-                  <p className="text-[var(--text-muted)]">Status: {e.status}</p>
+                  <p style={{ color: "var(--text-muted)" }}>Nota: {e.numnota ?? "-"} · Carregamento: {e.numcar ?? "-"}</p>
+                  <p style={{ color: "var(--text-muted)" }}>Placa: {e.placa ?? "-"}</p>
+                  <p style={{ color: "var(--text-muted)" }}>Destino: {e.destino ?? "-"}</p>
+                  <p style={{ color: "var(--text-muted)" }}>Status: {e.status}</p>
                 </div>
               ))}
             </div>
