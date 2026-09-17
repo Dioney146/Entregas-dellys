@@ -95,10 +95,23 @@ export default function CronogramaPage() {
       setCarregando(true);
       setErro(null);
       try {
-        const resp = await fetch("/api/entregas");
-        const json = await resp.json();
-        if (!resp.ok) throw new Error(json.error ?? "Erro ao carregar entregas");
-        setEntregas(json);
+        const [respEntregas, respArquivo] = await Promise.all([
+          fetch("/api/entregas"),
+          fetch("/api/arquivo"),
+        ]);
+
+        const jsonEntregas = await respEntregas.json();
+        if (!respEntregas.ok) throw new Error(jsonEntregas.error ?? "Erro ao carregar entregas");
+
+        let jsonArquivo: any[] = [];
+        try {
+          const dadosArquivo = await respArquivo.json();
+          if (respArquivo.ok && Array.isArray(dadosArquivo)) jsonArquivo = dadosArquivo;
+        } catch {
+          // se o arquivo falhar, segue só com as ativas
+        }
+
+        setEntregas([...jsonEntregas, ...jsonArquivo]);
       } catch (e: any) {
         setErro(e.message ?? "Erro ao carregar entregas");
       } finally {
