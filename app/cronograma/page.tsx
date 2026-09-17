@@ -47,28 +47,29 @@ function parseData(raw: string | null | undefined): Date | null {
   return null;
 }
 
-function normalizarTexto(txt: string): string {
+const CONECTORES = ["DA", "DE", "DO", "DAS", "DOS", "E"];
+
+function normalizarChave(txt: string): string {
   return txt
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .trim()
     .toUpperCase()
-    .replace(/^[A-Z]{2}-/, "");
+    .replace(/[_\-]+/g, " ")
+    .replace(/^[A-Z]{2}\s+/, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-const GRUPOS_MUNICIPIOS: { principal: string; aliases: string[] }[] = [
-  { principal: "Manacapuru", aliases: ["MANACAPURU", "IRANDUBA", "NOVO AIRAO"] },
-  { principal: "Presidente Figueiredo", aliases: ["PRESIDENTE FIGUEIREDO"] },
-  { principal: "Autazes", aliases: ["AUTAZES", "CAREIRO DA VARZEA", "CAREIRO", "MANAQUIRI"] },
-  { principal: "Silves", aliases: ["SILVES", "ITAPIRANGA"] },
-  { principal: "Itacoatiara", aliases: ["ITACOATIARA", "RIO PRETO DA EVA", "NOVO REMANSO"] },
-];
-
-function resolverMunicipio(nomeBruto: string): string {
-  const normalizado = normalizarTexto(nomeBruto);
-  const grupo = GRUPOS_MUNICIPIOS.find((g) => g.aliases.includes(normalizado));
-  if (grupo) return grupo.principal;
-  return nomeBruto.trim();
+function paraTitulo(chave: string): string {
+  return chave
+    .toLowerCase()
+    .split(" ")
+    .map((palavra, idx) => {
+      const upper = palavra.toUpperCase();
+      if (idx !== 0 && CONECTORES.includes(upper)) return palavra;
+      return palavra.charAt(0).toUpperCase() + palavra.slice(1);
+    })
+    .join(" ");
 }
 
 interface CelulaInfo {
@@ -150,7 +151,8 @@ export default function CronogramaPage() {
 
       if (x.entrega.tipo === "rodoviario") {
         const bruto = x.entrega.destino || x.entrega.municent || "Não informado";
-        linha = resolverMunicipio(bruto);
+        const chave = normalizarChave(bruto);
+        linha = chave ? paraTitulo(chave) : "Não informado";
       } else {
         linha = x.entrega.modal ? x.entrega.modal.trim().toUpperCase() : "Fluvial (sem modal)";
       }
@@ -195,7 +197,7 @@ export default function CronogramaPage() {
           Cronograma Anual de Entregas
         </h2>
         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          Visão por município (rodoviário) ou modal (fluvial) e dia.
+          Visão por destino (rodoviário) ou modal (fluvial) e dia.
         </p>
       </div>
 
@@ -286,7 +288,7 @@ export default function CronogramaPage() {
         </div>
         <div className="glass-surface rounded-xl p-3">
           <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
-            <MapPin size={14} /> Municípios/Modais ativos
+            <MapPin size={14} /> Destinos/Modais ativos
           </div>
           <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{linhasAtivas}</p>
         </div>
@@ -350,7 +352,7 @@ export default function CronogramaPage() {
                     color: "var(--text-muted)",
                   }}
                 >
-                  Município / Modal
+                  Destino / Modal
                 </th>
                 {Array.from({ length: diasNoMes }, (_, i) => i + 1).map((dia) => {
                   const diaSemana = new Date(ano, mes - 1, dia).getDay();
