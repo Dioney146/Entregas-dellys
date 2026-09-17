@@ -72,64 +72,29 @@ const STATUS_LABEL: { [chave: string]: StatusInfo } = {
   },
 };
 
-function normalizarTexto(txt: string): string {
+const CONECTORES = ["DA", "DE", "DO", "DAS", "DOS", "E"];
+
+function normalizarChave(txt: string): string {
   return txt
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .trim()
     .toUpperCase()
-    .replace(/^[A-Z]{2}-/, "");
+    .replace(/[_\-]+/g, " ")
+    .replace(/^[A-Z]{2}\s+/, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-interface MembroMunicipio {
-  chave: string;
-  label: string;
-}
-
-const GRUPOS_MUNICIPIOS: { principal: string; membros: MembroMunicipio[] }[] = [
-  {
-    principal: "Manacapuru",
-    membros: [
-      { chave: "MANACAPURU", label: "Manacapuru" },
-      { chave: "IRANDUBA", label: "Iranduba" },
-      { chave: "NOVO AIRAO", label: "Novo Airão" },
-    ],
-  },
-  {
-    principal: "Presidente Figueiredo",
-    membros: [{ chave: "PRESIDENTE FIGUEIREDO", label: "Presidente Figueiredo" }],
-  },
-  {
-    principal: "Autazes",
-    membros: [
-      { chave: "AUTAZES", label: "Autazes" },
-      { chave: "CAREIRO DA VARZEA", label: "Careiro da Várzea" },
-      { chave: "CAREIRO", label: "Careiro" },
-      { chave: "MANAQUIRI", label: "Manaquiri" },
-    ],
-  },
-  {
-    principal: "Silves",
-    membros: [
-      { chave: "SILVES", label: "Silves" },
-      { chave: "ITAPIRANGA", label: "Itapiranga" },
-    ],
-  },
-  {
-    principal: "Itacoatiara",
-    membros: [
-      { chave: "ITACOATIARA", label: "Itacoatiara" },
-      { chave: "RIO PRETO DA EVA", label: "Rio Preto da Eva" },
-      { chave: "NOVO REMANSO", label: "Novo Remanso" },
-    ],
-  },
-];
-
-function resolverMunicipio(nomeBruto: string): string {
-  const normalizado = normalizarTexto(nomeBruto);
-  const grupo = GRUPOS_MUNICIPIOS.find((g) => g.membros.some((m) => m.chave === normalizado));
-  if (grupo) return grupo.principal;
-  return nomeBruto.trim();
+function paraTitulo(chave: string): string {
+  return chave
+    .toLowerCase()
+    .split(" ")
+    .map((palavra, idx) => {
+      const upper = palavra.toUpperCase();
+      if (idx !== 0 && CONECTORES.includes(upper)) return palavra;
+      return palavra.charAt(0).toUpperCase() + palavra.slice(1);
+    })
+    .join(" ");
 }
 
 function dataFormatada(): string {
@@ -153,7 +118,7 @@ export default function EntregasPage() {
   const [salvandoId, setSalvandoId] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [filtroStatus, setFiltroStatus] = useState<string>("agendado");
-  const [filtroCidade, setFiltroCidade] = useState<string>("");
+  const [filtroDestino, setFiltroDestino] = useState<string>("");
   const [busca, setBusca] = useState("");
   const [modalidade, setModalidade] = useState<ModalidadeFiltro>("rodoviario");
 
@@ -189,45 +154,45 @@ export default function EntregasPage() {
     return entregas.filter((e) => e.tipo === modalidade);
   }, [entregas, modalidade]);
 
-  const entregasPorCidade = useMemo(() => {
-    if (modalidade !== "rodoviario" || !filtroCidade) return entregasPorModalidade;
+  const destinosDisponiveis = useMemo(() => {
+    if (modalidade !== "rodoviario") return [];
+    const mapa = new Map<string, string>();
+    entregasPorModalidade.forEach((e) => {
+      const bruto = e.destino || e.municent || "";
+      if (!bruto.trim()) return;
+      const chave = normalizarChave(bruto);
+      if (chave && !mapa.has(chave)) mapa.set(chave, paraTitulo(chave));
+    });
+    return Array.from(mapa.entries())
+      .map(([chave, label]) => ({ chave, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [entregasPorModalidade, modalidade]);
 
-    if (filtroCidade.startsWith("GRUPO:")) {
-      const grupo = filtroCidade.slice(6);
-      return entregasPorModalidade.filter((e) => {
-        const bruto = e.destino || e.municent || "";
-        return resolverMunicipio(bruto) === grupo;
-      });
-    }
-
-    if (filtroCidade.startsWith("CIDADE:")) {
-      const chave = filtroCidade.slice(7);
-      return entregasPorModalidade.filter((e) => {
-        const bruto = e.destino || e.municent || "";
-        return normalizarTexto(bruto) === chave;
-      });
-    }
-
-    return entregasPorModalidade;
-  }, [entregasPorModalidade, filtroCidade, modalidade]);
+  const entregasPorDestino = useMemo(() => {
+    if (modalidade !== "rodoviario" || !filtroDestino) return entregasPorModalidade;
+    return entregasPorModalidade.filter((e) => {
+      const bruto = e.destino || e.municent || "";
+      return normalizarChave(bruto) === filtroDestino;
+    });
+  }, [entregasPorModalidade, filtroDestino, modalidade]);
 
   const entregasFiltradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
-    if (!termo) return entregasPorCidade;
+    if (!termo) return entregasPorDestino;
 
-    return entregasPorCidade.filter((e) => {
+    return entregasPorDestino.filter((e) => {
       const campos = [e.cliente, e.numnota, e.numcar, e.placa, e.destino, e.municent, e.codcli];
       return campos.some((campo) => (campo ?? "").toLowerCase().includes(termo));
     });
-  }, [entregasPorCidade, busca]);
+  }, [entregasPorDestino, busca]);
 
   const indicadores = useMemo(() => {
-    const total = entregasPorCidade.length;
-    const entregues = entregasPorCidade.filter((e) => e.status === "entregue").length;
-    const pendentes = entregasPorCidade.filter((e) => e.status === "agendado").length;
-    const ocorrencias = entregasPorCidade.filter((e) => e.status === "ocorrencia").length;
+    const total = entregasPorDestino.length;
+    const entregues = entregasPorDestino.filter((e) => e.status === "entregue").length;
+    const pendentes = entregasPorDestino.filter((e) => e.status === "agendado").length;
+    const ocorrencias = entregasPorDestino.filter((e) => e.status === "ocorrencia").length;
     return { total, entregues, pendentes, ocorrencias };
-  }, [entregasPorCidade]);
+  }, [entregasPorDestino]);
 
   const totalRodoviario = entregas.filter((e) => e.tipo === "rodoviario").length;
   const totalFluvial = entregas.filter((e) => e.tipo === "fluvial").length;
@@ -355,7 +320,7 @@ export default function EntregasPage() {
               key={tile.valor}
               onClick={() => {
                 setModalidade(tile.valor);
-                if (tile.valor === "fluvial") setFiltroCidade("");
+                if (tile.valor === "fluvial") setFiltroDestino("");
               }}
               className="relative text-left rounded-2xl overflow-hidden transition-all"
               style={{
@@ -474,21 +439,14 @@ export default function EntregasPage() {
               <select
                 className="bg-transparent outline-none text-sm"
                 style={{ color: "var(--text-primary)" }}
-                value={filtroCidade}
-                onChange={(e) => setFiltroCidade(e.target.value)}
+                value={filtroDestino}
+                onChange={(e) => setFiltroDestino(e.target.value)}
               >
                 <option value="">Todos os destinos</option>
-                {GRUPOS_MUNICIPIOS.map((g) => (
-                  <optgroup key={g.principal} label={g.principal}>
-                    <option value={`GRUPO:${g.principal}`}>{g.principal} (grupo inteiro)</option>
-                    {g.membros
-                      .filter((m) => m.label !== g.principal)
-                      .map((m) => (
-                        <option key={m.chave} value={`CIDADE:${m.chave}`}>
-                          {m.label} (só ela)
-                        </option>
-                      ))}
-                  </optgroup>
+                {destinosDisponiveis.map((d) => (
+                  <option key={d.chave} value={d.chave}>
+                    {d.label}
+                  </option>
                 ))}
               </select>
             </div>
