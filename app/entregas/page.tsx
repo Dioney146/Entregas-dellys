@@ -13,8 +13,6 @@ import {
   Plus,
   Trash2,
   MapPin,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { RodoviarioArt, FluvialArt } from "./illustrations";
 
@@ -79,7 +77,8 @@ function normalizarTexto(txt: string): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
-    .toUpperCase();
+    .toUpperCase()
+    .replace(/^[A-Z]{2}-/, "");
 }
 
 interface MembroMunicipio {
@@ -148,8 +147,6 @@ function dataHoraFormatada(): string {
   return `${dataFormatada()} ${hora}:${min}:${seg}`;
 }
 
-const ITENS_POR_PAGINA = 15;
-
 export default function EntregasPage() {
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -159,7 +156,6 @@ export default function EntregasPage() {
   const [filtroCidade, setFiltroCidade] = useState<string>("");
   const [busca, setBusca] = useState("");
   const [modalidade, setModalidade] = useState<ModalidadeFiltro>("rodoviario");
-  const [pagina, setPagina] = useState(1);
 
   const [modalEntrega, setModalEntrega] = useState<Entrega | null>(null);
   const [obs, setObs] = useState("");
@@ -189,10 +185,6 @@ export default function EntregasPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtroStatus]);
 
-  useEffect(() => {
-    setPagina(1);
-  }, [filtroStatus, filtroCidade, busca, modalidade]);
-
   const entregasPorModalidade = useMemo(() => {
     return entregas.filter((e) => e.tipo === modalidade);
   }, [entregas, modalidade]);
@@ -203,7 +195,7 @@ export default function EntregasPage() {
     if (filtroCidade.startsWith("GRUPO:")) {
       const grupo = filtroCidade.slice(6);
       return entregasPorModalidade.filter((e) => {
-        const bruto = e.municent || e.destino || "";
+        const bruto = e.destino || e.municent || "";
         return resolverMunicipio(bruto) === grupo;
       });
     }
@@ -211,7 +203,7 @@ export default function EntregasPage() {
     if (filtroCidade.startsWith("CIDADE:")) {
       const chave = filtroCidade.slice(7);
       return entregasPorModalidade.filter((e) => {
-        const bruto = e.municent || e.destino || "";
+        const bruto = e.destino || e.municent || "";
         return normalizarTexto(bruto) === chave;
       });
     }
@@ -228,12 +220,6 @@ export default function EntregasPage() {
       return campos.some((campo) => (campo ?? "").toLowerCase().includes(termo));
     });
   }, [entregasPorCidade, busca]);
-
-  const totalPaginas = Math.max(1, Math.ceil(entregasFiltradas.length / ITENS_POR_PAGINA));
-  const entregasDaPagina = useMemo(() => {
-    const inicio = (pagina - 1) * ITENS_POR_PAGINA;
-    return entregasFiltradas.slice(inicio, inicio + ITENS_POR_PAGINA);
-  }, [entregasFiltradas, pagina]);
 
   const indicadores = useMemo(() => {
     const total = entregasPorCidade.length;
@@ -491,7 +477,7 @@ export default function EntregasPage() {
                 value={filtroCidade}
                 onChange={(e) => setFiltroCidade(e.target.value)}
               >
-                <option value="">Todas as cidades</option>
+                <option value="">Todos os destinos</option>
                 {GRUPOS_MUNICIPIOS.map((g) => (
                   <optgroup key={g.principal} label={g.principal}>
                     <option value={`GRUPO:${g.principal}`}>{g.principal} (grupo inteiro)</option>
@@ -532,7 +518,7 @@ export default function EntregasPage() {
                 </tr>
               </thead>
               <tbody>
-                {entregasDaPagina.map((e) => {
+                {entregasFiltradas.map((e) => {
                   const st = STATUS_LABEL[e.status] || STATUS_LABEL.agendado;
                   return (
                     <tr
@@ -594,7 +580,7 @@ export default function EntregasPage() {
                     </tr>
                   );
                 })}
-                {entregasDaPagina.length === 0 && (
+                {entregasFiltradas.length === 0 && (
                   <tr>
                     <td colSpan={8} className="p-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>
                       Nenhuma entrega encontrada para esse filtro.
@@ -603,38 +589,6 @@ export default function EntregasPage() {
                 )}
               </tbody>
             </table>
-          </div>
-
-          <div
-            className="flex items-center justify-between px-4 py-3 border-t text-xs"
-            style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}
-          >
-            <span>
-              {entregasFiltradas.length === 0
-                ? "Nenhum resultado"
-                : `Mostrando ${(pagina - 1) * ITENS_POR_PAGINA + 1}–${Math.min(pagina * ITENS_POR_PAGINA, entregasFiltradas.length)} de ${entregasFiltradas.length}`}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPagina((p) => Math.max(1, p - 1))}
-                disabled={pagina === 1}
-                className="p-1.5 rounded-md disabled:opacity-30 hover:bg-black/5"
-                style={{ color: "var(--text-primary)" }}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <span className="px-2 font-medium" style={{ color: "var(--text-primary)" }}>
-                {pagina} / {totalPaginas}
-              </span>
-              <button
-                onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
-                disabled={pagina === totalPaginas}
-                className="p-1.5 rounded-md disabled:opacity-30 hover:bg-black/5"
-                style={{ color: "var(--text-primary)" }}
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
           </div>
         </div>
       )}
