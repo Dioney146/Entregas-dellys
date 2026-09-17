@@ -13,6 +13,8 @@ import {
   Plus,
   Trash2,
   MapPin,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { RodoviarioArt, FluvialArt } from "./illustrations";
 
@@ -48,27 +50,27 @@ interface ProdutoFaltaLinha {
 const STATUS_LABEL: { [chave: string]: StatusInfo } = {
   agendado: {
     label: "Agendado",
-    cor: "var(--status-agendado)",
-    bg: "rgba(107,114,128,0.12)",
-    borda: "rgba(107,114,128,0.3)",
+    cor: "#3b5f7a",
+    bg: "rgba(59,95,122,0.10)",
+    borda: "rgba(59,95,122,0.28)",
   },
   entregue: {
     label: "Entregue",
     cor: "var(--status-entregue)",
-    bg: "rgba(15,157,88,0.12)",
-    borda: "rgba(15,157,88,0.3)",
+    bg: "rgba(15,157,88,0.10)",
+    borda: "rgba(15,157,88,0.28)",
   },
   ocorrencia: {
     label: "Ocorrência",
     cor: "var(--status-ocorrencia)",
-    bg: "rgba(183,121,31,0.12)",
-    borda: "rgba(183,121,31,0.3)",
+    bg: "rgba(183,121,31,0.10)",
+    borda: "rgba(183,121,31,0.28)",
   },
   nao_entregue: {
     label: "Não entregue",
     cor: "var(--status-nao-entregue)",
-    bg: "rgba(209,59,59,0.12)",
-    borda: "rgba(209,59,59,0.3)",
+    bg: "rgba(209,59,59,0.10)",
+    borda: "rgba(209,59,59,0.28)",
   },
 };
 
@@ -80,17 +82,53 @@ function normalizarTexto(txt: string): string {
     .toUpperCase();
 }
 
-const GRUPOS_MUNICIPIOS: { principal: string; aliases: string[] }[] = [
-  { principal: "Manacapuru", aliases: ["MANACAPURU", "IRANDUBA", "NOVO AIRAO"] },
-  { principal: "Presidente Figueiredo", aliases: ["PRESIDENTE FIGUEIREDO"] },
-  { principal: "Autazes", aliases: ["AUTAZES", "CAREIRO DA VARZEA", "CAREIRO", "MANAQUIRI"] },
-  { principal: "Silves", aliases: ["SILVES", "ITAPIRANGA"] },
-  { principal: "Itacoatiara", aliases: ["ITACOATIARA", "RIO PRETO DA EVA", "NOVO REMANSO"] },
+interface MembroMunicipio {
+  chave: string;
+  label: string;
+}
+
+const GRUPOS_MUNICIPIOS: { principal: string; membros: MembroMunicipio[] }[] = [
+  {
+    principal: "Manacapuru",
+    membros: [
+      { chave: "MANACAPURU", label: "Manacapuru" },
+      { chave: "IRANDUBA", label: "Iranduba" },
+      { chave: "NOVO AIRAO", label: "Novo Airão" },
+    ],
+  },
+  {
+    principal: "Presidente Figueiredo",
+    membros: [{ chave: "PRESIDENTE FIGUEIREDO", label: "Presidente Figueiredo" }],
+  },
+  {
+    principal: "Autazes",
+    membros: [
+      { chave: "AUTAZES", label: "Autazes" },
+      { chave: "CAREIRO DA VARZEA", label: "Careiro da Várzea" },
+      { chave: "CAREIRO", label: "Careiro" },
+      { chave: "MANAQUIRI", label: "Manaquiri" },
+    ],
+  },
+  {
+    principal: "Silves",
+    membros: [
+      { chave: "SILVES", label: "Silves" },
+      { chave: "ITAPIRANGA", label: "Itapiranga" },
+    ],
+  },
+  {
+    principal: "Itacoatiara",
+    membros: [
+      { chave: "ITACOATIARA", label: "Itacoatiara" },
+      { chave: "RIO PRETO DA EVA", label: "Rio Preto da Eva" },
+      { chave: "NOVO REMANSO", label: "Novo Remanso" },
+    ],
+  },
 ];
 
 function resolverMunicipio(nomeBruto: string): string {
   const normalizado = normalizarTexto(nomeBruto);
-  const grupo = GRUPOS_MUNICIPIOS.find((g) => g.aliases.includes(normalizado));
+  const grupo = GRUPOS_MUNICIPIOS.find((g) => g.membros.some((m) => m.chave === normalizado));
   if (grupo) return grupo.principal;
   return nomeBruto.trim();
 }
@@ -110,6 +148,8 @@ function dataHoraFormatada(): string {
   return `${dataFormatada()} ${hora}:${min}:${seg}`;
 }
 
+const ITENS_POR_PAGINA = 15;
+
 export default function EntregasPage() {
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -119,6 +159,7 @@ export default function EntregasPage() {
   const [filtroCidade, setFiltroCidade] = useState<string>("");
   const [busca, setBusca] = useState("");
   const [modalidade, setModalidade] = useState<ModalidadeFiltro>("rodoviario");
+  const [pagina, setPagina] = useState(1);
 
   const [modalEntrega, setModalEntrega] = useState<Entrega | null>(null);
   const [obs, setObs] = useState("");
@@ -148,16 +189,34 @@ export default function EntregasPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtroStatus]);
 
+  useEffect(() => {
+    setPagina(1);
+  }, [filtroStatus, filtroCidade, busca, modalidade]);
+
   const entregasPorModalidade = useMemo(() => {
     return entregas.filter((e) => e.tipo === modalidade);
   }, [entregas, modalidade]);
 
   const entregasPorCidade = useMemo(() => {
     if (modalidade !== "rodoviario" || !filtroCidade) return entregasPorModalidade;
-    return entregasPorModalidade.filter((e) => {
-      const bruto = e.municent || e.destino || "";
-      return resolverMunicipio(bruto) === filtroCidade;
-    });
+
+    if (filtroCidade.startsWith("GRUPO:")) {
+      const grupo = filtroCidade.slice(6);
+      return entregasPorModalidade.filter((e) => {
+        const bruto = e.municent || e.destino || "";
+        return resolverMunicipio(bruto) === grupo;
+      });
+    }
+
+    if (filtroCidade.startsWith("CIDADE:")) {
+      const chave = filtroCidade.slice(7);
+      return entregasPorModalidade.filter((e) => {
+        const bruto = e.municent || e.destino || "";
+        return normalizarTexto(bruto) === chave;
+      });
+    }
+
+    return entregasPorModalidade;
   }, [entregasPorModalidade, filtroCidade, modalidade]);
 
   const entregasFiltradas = useMemo(() => {
@@ -169,6 +228,12 @@ export default function EntregasPage() {
       return campos.some((campo) => (campo ?? "").toLowerCase().includes(termo));
     });
   }, [entregasPorCidade, busca]);
+
+  const totalPaginas = Math.max(1, Math.ceil(entregasFiltradas.length / ITENS_POR_PAGINA));
+  const entregasDaPagina = useMemo(() => {
+    const inicio = (pagina - 1) * ITENS_POR_PAGINA;
+    return entregasFiltradas.slice(inicio, inicio + ITENS_POR_PAGINA);
+  }, [entregasFiltradas, pagina]);
 
   const indicadores = useMemo(() => {
     const total = entregasPorCidade.length;
@@ -285,7 +350,7 @@ export default function EntregasPage() {
   };
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-5 w-full">
       <div>
         <h2 className="text-2xl font-semibold font-display tracking-tight" style={{ color: "var(--text-primary)" }}>
           Entregas
@@ -296,91 +361,79 @@ export default function EntregasPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button
-          onClick={() => {
-            setModalidade(tileRodoviario.valor);
-          }}
-          className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
-          style={{
-            borderColor: modalidade === "rodoviario" ? tileRodoviario.accent : "var(--border-subtle)",
-            boxShadow:
-              modalidade === "rodoviario"
-                ? `0 0 0 1px ${tileRodoviario.accent}, 0 8px 24px -8px ${tileRodoviario.accent}55`
-                : "none",
-            opacity: modalidade === "rodoviario" ? 1 : 0.85,
-          }}
-        >
-          <RodoviarioArt active={modalidade === "rodoviario"} />
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-display font-medium text-base" style={{ color: "var(--text-primary)" }}>{tileRodoviario.titulo}</h3>
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-mono-data"
-                style={{ color: tileRodoviario.accent, backgroundColor: `${tileRodoviario.accent}22` }}
-              >
-                {tileRodoviario.total}
-              </span>
-            </div>
-            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{tileRodoviario.subtitulo}</p>
-          </div>
-        </button>
-
-        <button
-          onClick={() => {
-            setModalidade(tileFluvial.valor);
-            setFiltroCidade("");
-          }}
-          className="text-left rounded-2xl overflow-hidden glass-surface transition-all"
-          style={{
-            borderColor: modalidade === "fluvial" ? tileFluvial.accent : "var(--border-subtle)",
-            boxShadow:
-              modalidade === "fluvial"
-                ? `0 0 0 1px ${tileFluvial.accent}, 0 8px 24px -8px ${tileFluvial.accent}55`
-                : "none",
-            opacity: modalidade === "fluvial" ? 1 : 0.85,
-          }}
-        >
-          <FluvialArt active={modalidade === "fluvial"} />
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-display font-medium text-base" style={{ color: "var(--text-primary)" }}>{tileFluvial.titulo}</h3>
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-mono-data"
-                style={{ color: tileFluvial.accent, backgroundColor: `${tileFluvial.accent}22` }}
-              >
-                {tileFluvial.total}
-              </span>
-            </div>
-            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{tileFluvial.subtitulo}</p>
-          </div>
-        </button>
+        {[tileRodoviario, tileFluvial].map((tile) => {
+          const ativo = modalidade === tile.valor;
+          const Art = tile.valor === "rodoviario" ? RodoviarioArt : FluvialArt;
+          return (
+            <button
+              key={tile.valor}
+              onClick={() => {
+                setModalidade(tile.valor);
+                if (tile.valor === "fluvial") setFiltroCidade("");
+              }}
+              className="relative text-left rounded-2xl overflow-hidden transition-all"
+              style={{
+                border: `1px solid ${ativo ? tile.accent : "var(--border-subtle)"}`,
+                backgroundColor: "var(--bg-surface)",
+                boxShadow: ativo
+                  ? `0 10px 28px -12px ${tile.accent}66`
+                  : "0 1px 3px rgba(17,24,39,0.04)",
+              }}
+            >
+              <Art active={ativo} />
+              <div className="p-5 flex items-end justify-between">
+                <div>
+                  <h3 className="font-display font-semibold text-base" style={{ color: "var(--text-primary)" }}>
+                    {tile.titulo}
+                  </h3>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                    {tile.subtitulo}
+                  </p>
+                </div>
+                <span
+                  className="text-4xl font-bold font-mono-data leading-none"
+                  style={{ color: tile.accent }}
+                >
+                  {tile.total}
+                </span>
+              </div>
+              {ativo && (
+                <div
+                  className="absolute top-0 left-0 right-0 h-[3px]"
+                  style={{ backgroundColor: tile.accent }}
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="glass-surface rounded-xl p-3">
-          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
-            <Package size={14} /> Total
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[
+          { label: "Total", valor: indicadores.total, cor: "var(--text-muted)", Icone: Package },
+          { label: "Entregues", valor: indicadores.entregues, cor: "var(--status-entregue)", Icone: CheckCircle2 },
+          { label: "Pendentes", valor: indicadores.pendentes, cor: "#3b5f7a", Icone: Clock },
+          { label: "Ocorrências", valor: indicadores.ocorrencias, cor: "var(--status-ocorrencia)", Icone: TriangleAlert },
+        ].map((kpi, idx) => (
+          <div
+            key={idx}
+            className="rounded-2xl p-4 pl-5 relative overflow-hidden"
+            style={{
+              backgroundColor: "var(--bg-surface)",
+              border: "1px solid var(--border-subtle)",
+              boxShadow: "0 1px 3px rgba(17,24,39,0.04)",
+            }}
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: kpi.cor }} />
+            <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+              <kpi.Icone size={14} style={{ color: kpi.cor }} />
+              {kpi.label}
+            </div>
+            <p className="text-2xl font-bold font-mono-data mt-1.5" style={{ color: "var(--text-primary)" }}>
+              {kpi.valor}
+            </p>
           </div>
-          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{indicadores.total}</p>
-        </div>
-        <div className="glass-surface rounded-xl p-3">
-          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--status-entregue)" }}>
-            <CheckCircle2 size={14} /> Entregues
-          </div>
-          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{indicadores.entregues}</p>
-        </div>
-        <div className="glass-surface rounded-xl p-3">
-          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--status-agendado)" }}>
-            <Clock size={14} /> Pendentes
-          </div>
-          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{indicadores.pendentes}</p>
-        </div>
-        <div className="glass-surface rounded-xl p-3">
-          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--status-ocorrencia)" }}>
-            <TriangleAlert size={14} /> Ocorrências
-          </div>
-          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{indicadores.ocorrencias}</p>
-        </div>
+        ))}
       </div>
 
       {erro && (
@@ -389,10 +442,13 @@ export default function EntregasPage() {
         </div>
       )}
 
-      <div className="glass-surface rounded-xl p-3 flex flex-col sm:flex-row gap-3">
+      <div
+        className="rounded-2xl p-3 flex flex-col sm:flex-row gap-3"
+        style={{ backgroundColor: "var(--bg-surface)", border: "1px solid var(--border-subtle)", boxShadow: "0 1px 3px rgba(17,24,39,0.04)" }}
+      >
         <div
-          className="flex items-center gap-2 flex-1 rounded-lg px-3 py-2 border"
-          style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)" }}
+          className="flex items-center gap-2 flex-1 rounded-lg px-3 py-2"
+          style={{ backgroundColor: "var(--bg-void)" }}
         >
           <Search size={16} style={{ color: "var(--text-muted)" }} />
           <input
@@ -404,139 +460,190 @@ export default function EntregasPage() {
             style={{ color: "var(--text-primary)" }}
           />
         </div>
-        <div
-          className="flex items-center gap-2 rounded-lg px-3 py-2 border"
-          style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)" }}
-        >
-          <Filter size={16} style={{ color: "var(--text-muted)" }} />
-          <select
-            className="bg-transparent outline-none text-sm"
-            style={{ color: "var(--text-primary)" }}
-            value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value)}
-          >
-            <option value="">Todos os status</option>
-            <option value="agendado">Agendado</option>
-            <option value="entregue">Entregue</option>
-            <option value="ocorrencia">Ocorrência</option>
-            <option value="nao_entregue">Não entregue</option>
-          </select>
-        </div>
-        {modalidade === "rodoviario" && (
+        <div className="flex gap-3">
           <div
-            className="flex items-center gap-2 rounded-lg px-3 py-2 border"
-            style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)" }}
+            className="flex items-center gap-2 rounded-lg px-3 py-2"
+            style={{ backgroundColor: "var(--bg-void)" }}
           >
-            <MapPin size={16} style={{ color: "var(--text-muted)" }} />
+            <Filter size={16} style={{ color: "var(--text-muted)" }} />
             <select
               className="bg-transparent outline-none text-sm"
               style={{ color: "var(--text-primary)" }}
-              value={filtroCidade}
-              onChange={(e) => setFiltroCidade(e.target.value)}
+              value={filtroStatus}
+              onChange={(e) => setFiltroStatus(e.target.value)}
             >
-              <option value="">Todas as cidades</option>
-              {GRUPOS_MUNICIPIOS.map((g) => (
-                <option key={g.principal} value={g.principal}>
-                  {g.principal}
-                </option>
-              ))}
+              <option value="">Todos os status</option>
+              <option value="agendado">Agendado</option>
+              <option value="entregue">Entregue</option>
+              <option value="ocorrencia">Ocorrência</option>
+              <option value="nao_entregue">Não entregue</option>
             </select>
           </div>
-        )}
+          {modalidade === "rodoviario" && (
+            <div
+              className="flex items-center gap-2 rounded-lg px-3 py-2"
+              style={{ backgroundColor: "var(--bg-void)" }}
+            >
+              <MapPin size={16} style={{ color: "var(--text-muted)" }} />
+              <select
+                className="bg-transparent outline-none text-sm"
+                style={{ color: "var(--text-primary)" }}
+                value={filtroCidade}
+                onChange={(e) => setFiltroCidade(e.target.value)}
+              >
+                <option value="">Todas as cidades</option>
+                {GRUPOS_MUNICIPIOS.map((g) => (
+                  <optgroup key={g.principal} label={g.principal}>
+                    <option value={`GRUPO:${g.principal}`}>{g.principal} (grupo inteiro)</option>
+                    {g.membros
+                      .filter((m) => m.label !== g.principal)
+                      .map((m) => (
+                        <option key={m.chave} value={`CIDADE:${m.chave}`}>
+                          {m.label} (só ela)
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </div>
 
       {carregando ? (
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>Carregando...</p>
       ) : (
-        <div className="glass-surface rounded-2xl overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead style={{ backgroundColor: "rgba(107,114,128,0.06)" }}>
-              <tr>
-                <th className="p-3 font-medium text-left" style={{ color: "var(--text-muted)" }}>Tipo</th>
-                <th className="p-3 font-medium text-left" style={{ color: "var(--text-muted)" }}>Carregamento</th>
-                <th className="p-3 font-medium text-left" style={{ color: "var(--text-muted)" }}>Nota</th>
-                <th className="p-3 font-medium text-left" style={{ color: "var(--text-muted)" }}>Cliente</th>
-                <th className="p-3 font-medium text-left" style={{ color: "var(--text-muted)" }}>Destino</th>
-                <th className="p-3 font-medium text-left" style={{ color: "var(--text-muted)" }}>Status</th>
-                <th className="p-3 font-medium text-left" style={{ color: "var(--text-muted)" }}>Atualizado em</th>
-                <th className="p-3 font-medium text-left" style={{ color: "var(--text-muted)" }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entregasFiltradas.map((e) => {
-                const st = STATUS_LABEL[e.status] || STATUS_LABEL.agendado;
-                return (
-                  <tr key={e.id} className="border-t hover:bg-black/[0.02]" style={{ borderColor: "var(--border-subtle)" }}>
-                    <td className="p-3 capitalize" style={{ color: "var(--text-primary)" }}>
-                      {e.tipo}
-                      {e.modal ? ` (${e.modal})` : ""}
-                    </td>
-                    <td className="p-3 font-mono-data" style={{ color: "var(--text-primary)" }}>{e.numcar ?? "-"}</td>
-                    <td className="p-3 font-mono-data" style={{ color: "var(--text-primary)" }}>{e.numnota ?? "-"}</td>
-                    <td className="p-3" style={{ color: "var(--text-primary)" }}>{e.cliente ?? "-"}</td>
-                    <td className="p-3" style={{ color: "var(--text-primary)" }}>{e.destino ?? e.municent ?? "-"}</td>
-                    <td className="p-3">
-                      <span
-                        className="text-xs rounded-full px-2 py-1 border"
-                        style={{ color: st.cor, backgroundColor: st.bg, borderColor: st.borda }}
-                      >
-                        {st.label}
-                      </span>
-                    </td>
-                    <td className="p-3 font-mono-data text-xs whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
-                      {e.data_realizada ?? "-"}
-                    </td>
-                    <td className="p-3">
-                      <div className="flex gap-1.5">
-                        <button
-                          disabled={salvandoId === e.id}
-                          onClick={() => marcarStatus(e.id, "entregue")}
-                          title="Marcar como entregue"
-                          className="flex items-center gap-1 border disabled:opacity-40 text-xs rounded-lg px-2 py-1 transition-colors"
-                          style={{ borderColor: "rgba(15,157,88,0.4)", color: "var(--status-entregue)" }}
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{ backgroundColor: "var(--bg-surface)", border: "1px solid var(--border-subtle)", boxShadow: "0 1px 4px rgba(17,24,39,0.05)" }}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ backgroundColor: "var(--bg-void)" }}>
+                  <th className="p-3.5 font-semibold text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Tipo</th>
+                  <th className="p-3.5 font-semibold text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Carregamento</th>
+                  <th className="p-3.5 font-semibold text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Nota</th>
+                  <th className="p-3.5 font-semibold text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Cliente</th>
+                  <th className="p-3.5 font-semibold text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Destino</th>
+                  <th className="p-3.5 font-semibold text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Status</th>
+                  <th className="p-3.5 font-semibold text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Atualizado</th>
+                  <th className="p-3.5 font-semibold text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entregasDaPagina.map((e) => {
+                  const st = STATUS_LABEL[e.status] || STATUS_LABEL.agendado;
+                  return (
+                    <tr
+                      key={e.id}
+                      className="border-t transition-colors hover:bg-black/[0.015]"
+                      style={{ borderColor: "var(--border-subtle)" }}
+                    >
+                      <td className="p-3.5 capitalize whitespace-nowrap" style={{ color: "var(--text-primary)" }}>
+                        {e.tipo}
+                        {e.modal ? ` (${e.modal})` : ""}
+                      </td>
+                      <td className="p-3.5 font-mono-data" style={{ color: "var(--text-primary)" }}>{e.numcar ?? "-"}</td>
+                      <td className="p-3.5 font-mono-data" style={{ color: "var(--text-primary)" }}>{e.numnota ?? "-"}</td>
+                      <td className="p-3.5" style={{ color: "var(--text-primary)" }}>{e.cliente ?? "-"}</td>
+                      <td className="p-3.5" style={{ color: "var(--text-primary)" }}>{e.destino ?? e.municent ?? "-"}</td>
+                      <td className="p-3.5">
+                        <span
+                          className="inline-flex items-center gap-1.5 text-xs font-medium rounded-full px-2.5 py-1 border"
+                          style={{ color: st.cor, backgroundColor: st.bg, borderColor: st.borda }}
                         >
-                          <CheckCircle2 size={13} /> Entregue
-                        </button>
-                        <button
-                          disabled={salvandoId === e.id}
-                          onClick={() => abrirModalOcorrencia(e)}
-                          title="Registrar ocorrência"
-                          className="flex items-center gap-1 border disabled:opacity-40 text-xs rounded-lg px-2 py-1 transition-colors"
-                          style={{ borderColor: "rgba(183,121,31,0.4)", color: "var(--status-ocorrencia)" }}
-                        >
-                          <AlertTriangle size={13} /> Ocorrência
-                        </button>
-                        <button
-                          disabled={salvandoId === e.id}
-                          onClick={() => marcarStatus(e.id, "nao_entregue")}
-                          title="Marcar como não entregue"
-                          className="flex items-center gap-1 border disabled:opacity-40 text-xs rounded-lg px-2 py-1 transition-colors"
-                          style={{ borderColor: "rgba(209,59,59,0.4)", color: "var(--status-nao-entregue)" }}
-                        >
-                          <XCircle size={13} /> Não entregue
-                        </button>
-                      </div>
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: st.cor }} />
+                          {st.label}
+                        </span>
+                      </td>
+                      <td className="p-3.5 font-mono-data text-xs whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                        {e.data_realizada ?? "-"}
+                      </td>
+                      <td className="p-3.5">
+                        <div className="flex gap-1">
+                          <button
+                            disabled={salvandoId === e.id}
+                            onClick={() => marcarStatus(e.id, "entregue")}
+                            title="Marcar como entregue"
+                            className="p-1.5 rounded-md disabled:opacity-40 transition-colors hover:bg-black/5"
+                            style={{ color: "var(--status-entregue)" }}
+                          >
+                            <CheckCircle2 size={16} />
+                          </button>
+                          <button
+                            disabled={salvandoId === e.id}
+                            onClick={() => abrirModalOcorrencia(e)}
+                            title="Registrar ocorrência"
+                            className="p-1.5 rounded-md disabled:opacity-40 transition-colors hover:bg-black/5"
+                            style={{ color: "var(--status-ocorrencia)" }}
+                          >
+                            <AlertTriangle size={16} />
+                          </button>
+                          <button
+                            disabled={salvandoId === e.id}
+                            onClick={() => marcarStatus(e.id, "nao_entregue")}
+                            title="Marcar como não entregue"
+                            className="p-1.5 rounded-md disabled:opacity-40 transition-colors hover:bg-black/5"
+                            style={{ color: "var(--status-nao-entregue)" }}
+                          >
+                            <XCircle size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {entregasDaPagina.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="p-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                      Nenhuma entrega encontrada para esse filtro.
                     </td>
                   </tr>
-                );
-              })}
-              {entregasFiltradas.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center" style={{ color: "var(--text-muted)" }}>
-                    Nenhuma entrega encontrada para esse filtro.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            className="flex items-center justify-between px-4 py-3 border-t text-xs"
+            style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}
+          >
+            <span>
+              {entregasFiltradas.length === 0
+                ? "Nenhum resultado"
+                : `Mostrando ${(pagina - 1) * ITENS_POR_PAGINA + 1}–${Math.min(pagina * ITENS_POR_PAGINA, entregasFiltradas.length)} de ${entregasFiltradas.length}`}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                disabled={pagina === 1}
+                className="p-1.5 rounded-md disabled:opacity-30 hover:bg-black/5"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="px-2 font-medium" style={{ color: "var(--text-primary)" }}>
+                {pagina} / {totalPaginas}
+              </span>
+              <button
+                onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+                disabled={pagina === totalPaginas}
+                className="p-1.5 rounded-md disabled:opacity-30 hover:bg-black/5"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       {modalEntrega && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
           <div
-            className="glass-surface rounded-2xl p-6 max-w-lg w-full space-y-4 max-h-[90vh] overflow-y-auto"
-            style={{ backgroundColor: "var(--bg-surface)" }}
+            className="rounded-2xl p-6 max-w-lg w-full space-y-4 max-h-[90vh] overflow-y-auto"
+            style={{ backgroundColor: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}
           >
             <h3 className="text-lg font-semibold font-display" style={{ color: "var(--text-primary)" }}>Registrar ocorrência</h3>
 
@@ -560,7 +667,7 @@ export default function EntregasPage() {
                       value={p.codigo}
                       onChange={(e) => atualizarProduto(idx, "codigo", e.target.value)}
                       className="flex-1 border rounded-lg p-2 text-sm outline-none"
-                      style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
+                      style={{ backgroundColor: "var(--bg-void)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
                     />
                     <input
                       type="text"
@@ -568,7 +675,7 @@ export default function EntregasPage() {
                       value={p.quantidade}
                       onChange={(e) => atualizarProduto(idx, "quantidade", e.target.value)}
                       className="w-20 border rounded-lg p-2 text-sm outline-none"
-                      style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
+                      style={{ backgroundColor: "var(--bg-void)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
                     />
                     <button
                       onClick={() => removerProduto(idx)}
@@ -595,7 +702,7 @@ export default function EntregasPage() {
               Observação da ocorrência
               <textarea
                 className="mt-1 w-full border rounded-lg p-2 text-sm outline-none"
-                style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
+                style={{ backgroundColor: "var(--bg-void)", borderColor: "var(--border-subtle)", color: "var(--text-primary)" }}
                 rows={3}
                 value={obs}
                 onChange={(e) => setObs(e.target.value)}
