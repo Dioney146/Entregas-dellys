@@ -31,26 +31,26 @@ const STATUS_LABEL: { [chave: string]: StatusInfo } = {
   entregue: {
     label: "Entregue",
     cor: "var(--status-entregue)",
-    bg: "rgba(52,211,153,0.15)",
-    borda: "rgba(52,211,153,0.35)",
+    bg: "rgba(15,157,88,0.10)",
+    borda: "rgba(15,157,88,0.28)",
   },
   ocorrencia: {
     label: "Ocorrência",
     cor: "var(--status-ocorrencia)",
-    bg: "rgba(245,165,36,0.15)",
-    borda: "rgba(245,165,36,0.35)",
+    bg: "rgba(183,121,31,0.10)",
+    borda: "rgba(183,121,31,0.28)",
   },
   nao_entregue: {
     label: "Não entregue",
     cor: "var(--status-nao-entregue)",
-    bg: "rgba(240,82,107,0.15)",
-    borda: "rgba(240,82,107,0.35)",
+    bg: "rgba(209,59,59,0.10)",
+    borda: "rgba(209,59,59,0.28)",
   },
   agendado: {
     label: "Agendado (parado 5+ dias)",
-    cor: "var(--status-agendado)",
-    bg: "rgba(100,116,139,0.15)",
-    borda: "rgba(100,116,139,0.35)",
+    cor: "#3b5f7a",
+    bg: "rgba(59,95,122,0.10)",
+    borda: "rgba(59,95,122,0.28)",
   },
 };
 
@@ -104,112 +104,130 @@ export default function ArquivoPage() {
   return (
     <div className="space-y-6 w-full">
       <div>
-        <h2 className="text-2xl font-semibold font-display tracking-tight flex items-center gap-2">
+        <h2 className="text-2xl font-semibold font-display tracking-tight flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
           <Archive size={22} /> Arquivo
         </h2>
-        <p className="text-sm text-[var(--text-muted)] mt-1">
+        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
           Entregas já resolvidas (entregues, não entregues, ocorrências ou paradas há mais de 5 dias).
         </p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="glass-surface rounded-xl p-3">
-          <div className="text-[var(--text-muted)] text-xs">Total arquivado</div>
-          <p className="text-xl font-semibold font-mono-data mt-1">{registros.length}</p>
+          <div className="text-xs" style={{ color: "var(--text-muted)" }}>Total arquivado</div>
+          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{registros.length}</p>
         </div>
         <div className="glass-surface rounded-xl p-3">
           <div className="text-xs" style={{ color: "var(--status-entregue)" }}>Entregues</div>
-          <p className="text-xl font-semibold font-mono-data mt-1">{totalEntregues}</p>
+          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{totalEntregues}</p>
         </div>
         <div className="glass-surface rounded-xl p-3">
           <div className="text-xs" style={{ color: "var(--status-ocorrencia)" }}>Ocorrências</div>
-          <p className="text-xl font-semibold font-mono-data mt-1">{totalOcorrencias}</p>
+          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{totalOcorrencias}</p>
         </div>
         <div className="glass-surface rounded-xl p-3">
           <div className="text-xs" style={{ color: "var(--status-nao-entregue)" }}>Não entregues</div>
-          <p className="text-xl font-semibold font-mono-data mt-1">{totalNaoEntregues}</p>
+          <p className="text-xl font-semibold font-mono-data mt-1" style={{ color: "var(--text-primary)" }}>{totalNaoEntregues}</p>
         </div>
       </div>
 
       {erro && (
-        <div className="bg-red-900/40 border border-red-700 text-red-200 text-sm rounded-lg p-3">
+        <div className="bg-red-100 border border-red-300 text-red-700 text-sm rounded-lg p-3">
           {erro}
         </div>
       )}
 
-      <div className="glass-surface rounded-xl p-3 flex flex-col sm:flex-row gap-3">
-        <div className="flex items-center gap-2 flex-1 bg-black/20 rounded-lg px-3 py-2">
-          <Search size={16} className="text-[var(--text-muted)]" />
+      <div
+        className="rounded-xl p-3 flex flex-col sm:flex-row gap-3"
+        style={{ backgroundColor: "var(--bg-surface)", border: "1px solid var(--border-subtle)", boxShadow: "0 1px 3px rgba(17,24,39,0.04)" }}
+      >
+        <div
+          className="flex items-center gap-2 flex-1 rounded-lg px-3 py-2"
+          style={{ backgroundColor: "var(--bg-void)" }}
+        >
+          <Search size={16} style={{ color: "var(--text-muted)" }} />
           <input
             type="text"
             placeholder="Buscar por cliente, nota, carregamento, placa..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="bg-transparent outline-none text-sm w-full placeholder:text-[var(--text-muted)]"
+            className="bg-transparent outline-none text-sm w-full"
+            style={{ color: "var(--text-primary)" }}
           />
         </div>
-        <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-2">
-          <Filter size={16} className="text-[var(--text-muted)]" />
+        <div
+          className="flex items-center gap-2 rounded-lg px-3 py-2"
+          style={{ backgroundColor: "var(--bg-void)" }}
+        >
+          <Filter size={16} style={{ color: "var(--text-muted)" }} />
           <select
             className="bg-transparent outline-none text-sm"
+            style={{ color: "var(--text-primary)" }}
             value={filtroTipo}
             onChange={(e) => setFiltroTipo(e.target.value)}
           >
-            <option value="" className="bg-slate-900">Todos os modais</option>
-            <option value="rodoviario" className="bg-slate-900">Rodoviário</option>
-            <option value="fluvial" className="bg-slate-900">Fluvial</option>
+            <option value="">Todos os modais</option>
+            <option value="rodoviario">Rodoviário</option>
+            <option value="fluvial">Fluvial</option>
           </select>
         </div>
-        <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-2">
+        <div
+          className="flex items-center gap-2 rounded-lg px-3 py-2"
+          style={{ backgroundColor: "var(--bg-void)" }}
+        >
           <select
             className="bg-transparent outline-none text-sm"
+            style={{ color: "var(--text-primary)" }}
             value={filtroStatus}
             onChange={(e) => setFiltroStatus(e.target.value)}
           >
-            <option value="" className="bg-slate-900">Todos os status</option>
-            <option value="entregue" className="bg-slate-900">Entregue</option>
-            <option value="ocorrencia" className="bg-slate-900">Ocorrência</option>
-            <option value="nao_entregue" className="bg-slate-900">Não entregue</option>
-            <option value="agendado" className="bg-slate-900">Agendado (parado)</option>
+            <option value="">Todos os status</option>
+            <option value="entregue">Entregue</option>
+            <option value="ocorrencia">Ocorrência</option>
+            <option value="nao_entregue">Não entregue</option>
+            <option value="agendado">Agendado (parado)</option>
           </select>
         </div>
       </div>
 
       {carregando ? (
-        <p className="text-[var(--text-muted)] text-sm">Carregando...</p>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Carregando...</p>
       ) : (
-        <div className="glass-surface rounded-2xl overflow-hidden overflow-x-auto">
+        <div
+          className="rounded-2xl overflow-hidden overflow-x-auto"
+          style={{ backgroundColor: "var(--bg-surface)", border: "1px solid var(--border-subtle)", boxShadow: "0 1px 4px rgba(17,24,39,0.05)" }}
+        >
           <table className="w-full text-sm">
-            <thead className="bg-black/20 text-left text-[var(--text-muted)]">
-              <tr>
-                <th className="p-3 font-medium">Tipo</th>
-                <th className="p-3 font-medium">Carregamento</th>
-                <th className="p-3 font-medium">Nota</th>
-                <th className="p-3 font-medium">Cliente</th>
-                <th className="p-3 font-medium">Destino</th>
-                <th className="p-3 font-medium">Placa</th>
-                <th className="p-3 font-medium">Status</th>
-                <th className="p-3 font-medium">Resolvido em</th>
-                <th className="p-3 font-medium">Arquivado em</th>
+            <thead>
+              <tr style={{ backgroundColor: "var(--bg-void)" }}>
+                <th className="p-3 font-medium text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Tipo</th>
+                <th className="p-3 font-medium text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Carregamento</th>
+                <th className="p-3 font-medium text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Nota</th>
+                <th className="p-3 font-medium text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Cliente</th>
+                <th className="p-3 font-medium text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Destino</th>
+                <th className="p-3 font-medium text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Placa</th>
+                <th className="p-3 font-medium text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Status</th>
+                <th className="p-3 font-medium text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Resolvido em</th>
+                <th className="p-3 font-medium text-left text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Arquivado em</th>
               </tr>
             </thead>
             <tbody>
               {registrosFiltrados.map((r) => {
                 const st = STATUS_LABEL[r.status] || STATUS_LABEL.agendado;
                 return (
-                  <tr key={r.id} className="border-t border-[var(--border-subtle)] hover:bg-white/[0.02]">
-                    <td className="p-3 capitalize">
+                  <tr key={r.id} className="border-t hover:bg-black/[0.015]" style={{ borderColor: "var(--border-subtle)" }}>
+                    <td className="p-3 capitalize" style={{ color: "var(--text-primary)" }}>
                       <span className="flex items-center gap-1">
                         {r.tipo === "fluvial" ? <Ship size={13} /> : <Truck size={13} />}
                         {r.tipo}
                         {r.modal ? ` (${r.modal})` : ""}
                       </span>
                     </td>
-                    <td className="p-3 font-mono-data text-[var(--text-primary)]">{r.numcar ?? "-"}</td>
-                    <td className="p-3 font-mono-data text-[var(--text-primary)]">{r.numnota ?? "-"}</td>
-                    <td className="p-3">{r.cliente ?? "-"}</td>
-                    <td className="p-3">{r.destino ?? r.municent ?? "-"}</td>
-                    <td className="p-3 font-mono-data">{r.placa ?? "-"}</td>
+                    <td className="p-3 font-mono-data" style={{ color: "var(--text-primary)" }}>{r.numcar ?? "-"}</td>
+                    <td className="p-3 font-mono-data" style={{ color: "var(--text-primary)" }}>{r.numnota ?? "-"}</td>
+                    <td className="p-3" style={{ color: "var(--text-primary)" }}>{r.cliente ?? "-"}</td>
+                    <td className="p-3" style={{ color: "var(--text-primary)" }}>{r.destino ?? r.municent ?? "-"}</td>
+                    <td className="p-3 font-mono-data" style={{ color: "var(--text-primary)" }}>{r.placa ?? "-"}</td>
                     <td className="p-3">
                       <span
                         className="text-xs rounded-full px-2 py-1 border"
@@ -218,10 +236,10 @@ export default function ArquivoPage() {
                         {st.label}
                       </span>
                     </td>
-                    <td className="p-3 font-mono-data text-[var(--text-muted)] text-xs whitespace-nowrap">
+                    <td className="p-3 font-mono-data text-xs whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
                       {r.data_realizada ?? "-"}
                     </td>
-                    <td className="p-3 font-mono-data text-[var(--text-muted)] text-xs whitespace-nowrap">
+                    <td className="p-3 font-mono-data text-xs whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
                       {r.arquivado_em}
                     </td>
                   </tr>
@@ -229,7 +247,7 @@ export default function ArquivoPage() {
               })}
               {registrosFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-[var(--text-muted)]">
+                  <td colSpan={9} className="p-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
                     Nenhum registro arquivado encontrado.
                   </td>
                 </tr>
