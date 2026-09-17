@@ -52,7 +52,8 @@ function normalizarTexto(txt: string): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
-    .toUpperCase();
+    .toUpperCase()
+    .replace(/^[A-Z]{2}-/, "");
 }
 
 const GRUPOS_MUNICIPIOS: { principal: string; aliases: string[] }[] = [
@@ -148,7 +149,7 @@ export default function CronogramaPage() {
       let linha: string;
 
       if (x.entrega.tipo === "rodoviario") {
-        const bruto = x.entrega.municent || x.entrega.destino || "Não informado";
+        const bruto = x.entrega.destino || x.entrega.municent || "Não informado";
         linha = resolverMunicipio(bruto);
       } else {
         linha = x.entrega.modal ? x.entrega.modal.trim().toUpperCase() : "Fluvial (sem modal)";
